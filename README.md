@@ -7,6 +7,9 @@
 
 万分抱歉!!!
 
+如果您是从我炮姐全弹幕的视频过来的, 我这里还有一份151w的全弹幕文件, 有需要可以拿走qwq
+链接：https://pan.baidu.com/s/1Z-K6rCiVaXsK1hxwDZkqEA?pwd=ビリビリ
+提取码：BlBl 
 
 # 爬取B站历史弹幕
 声明: 
