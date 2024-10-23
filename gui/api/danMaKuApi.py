@@ -10,7 +10,7 @@ proxies = {
 }
 
 cookies = {
-    'SESSDATA': 'b5a3b2e7%2C1737681226%2Ccda43%2A71CjABTI92O0FK36mvsWSgR8qb-at00NnH-H3sVEA71wfSeCBw2N7gpaV1xWkuoyoFlewSVnluczBVMXJVX0RRdFRPbWRXR0VJeS1mV0xMbVJlOW5pXzRFVTZET1hPMmVqWEpsYVZnbTE2eklmVEM5WXpXOTQxeDZhTVpTSWxpUy1obUVEZVNmM1l3IIEC'
+    'SESSDATA': '%2C1737681226%2Ccda43%2A71CjABTI92O0FK36mvsWSgR8qb-at00NnH-H3sVEA71wfSeCBw2N7gpaV1xWkuoyoFlewSVnluczBVMXJVX0RRdFRPbWRXR0VJeS1mV0xMbVJlOW5pXzRFVTZET1hPMmVqWEpsYVZnbTE2eklmVEM5WXpXOTQxeDZhTVpTSWxpUy1obUVEZVNmM1l3IIEC'
 }
 
 UserAgent = {
@@ -44,7 +44,7 @@ def 获取弹幕():
 
     req_headers = {
         'User-Agent': 'Modified-Since,Pragma,Last-Modified,Cache-Control,Expires,Content-Type,Access-Control-Allow-Credentials,DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Cache-Webcdn,X-Bilibili-Key-Real-Ip,X-Upos-Auth,Range',
-        'Cookie': 'SESSDATA=' + 'b5a3b2e7%2C1737681226%2Ccda43%2A71CjABTI92O0FK36mvsWSgR8qb-at00NnH-H3sVEA71wfSeCBw2N7gpaV1xWkuoyoFlewSVnluczBVMXJVX0RRdFRPbWRXR0VJeS1mV0xMbVJlOW5pXzRFVTZET1hPMmVqWEpsYVZnbTE2eklmVEM5WXpXOTQxeDZhTVpTSWxpUy1obUVEZVNmM1l3IIEC' + ';',
+        'Cookie': 'SESSDATA=' + '???' + ';',
         'Referer': 'https://www.bilibili.com/',
         'Origin': 'https://www.bilibili.com'
     }
@@ -58,31 +58,62 @@ def 获取弹幕():
     for i in range(len(danmaku_seg.elems)):
         print(text_format.MessageToString(danmaku_seg.elems[i], as_utf8=True), end='\n\n')
 
+def 反序列化_普通分段包弹幕(data) -> tuple:
+    danmakuSeg = Danmaku.DmSegMobileReply()
+    danmakuSeg.ParseFromString(data)
+    res = []
+    for it in danmakuSeg.elems:
+        res.append((
+                it.progress / 1000.0,   # progress <-> 出现时间 # (需要 / 1000) xml为float类型
+                it.mode,                # mode <-> 弹幕类型
+                it.fontsize,            # fontsize <-> 弹幕字号
+                it.color,               # color <-> 弹幕颜色
+                it.ctime,               # ctime <-> 弹幕发送时间
+                it.pool,                # pool <-> 弹幕池类型 (0 普通, 2 bas)
+                it.midHash,             # midHash <-> 发送者mid的HASH
+                it.id,                  # id <-> 弹幕dmid: int32
+                it.content              # content <-> 弹幕内容
+            )
+        )
+    return res
+
+
 # date: '2017-01-21'
-def 获取历史弹幕(date: str):
+def 获取历史弹幕(date: str, cid: int) -> tuple:
     url = 'https://api.bilibili.com/x/v2/dm/web/history/seg.so'
     params = {
-        'type': 1,           # 弹幕类型 (1: 视频弹幕)
-        'oid': 3262388,      # cid  1176840
-        'date': date         # 弹幕日期
+        'type': 1,   # 弹幕类型 (1: 视频弹幕)
+        'oid': cid,  # cid  1176840
+        'date': date # 弹幕日期
     }
     resp = requests.get(url, params, cookies=cookies, headers=UserAgent)
     data = resp.content
-    print(data)
 
-    danmaku_seg = Danmaku.DmSegMobileReply()
-    danmaku_seg.ParseFromString(data)
+    danmakuSeg = Danmaku.DmSegMobileReply()
+    danmakuSeg.ParseFromString(data)
 
-    for i in range(len(danmaku_seg.elems)):
-        print(text_format.MessageToString(danmaku_seg.elems[i], as_utf8=True), end='\n\n')
+    res = []
+    for it in danmakuSeg.elems:
+        res.append((
+                it.progress / 1000.0,   # progress <-> 出现时间 # (需要 / 1000) xml为float类型
+                it.mode,                # mode <-> 弹幕类型
+                it.fontsize,            # fontsize <-> 弹幕字号
+                it.color,               # color <-> 弹幕颜色
+                it.ctime,               # ctime <-> 弹幕发送时间
+                it.pool,                # pool <-> 弹幕池类型 (0 普通, 2 bas)
+                it.midHash,             # midHash <-> 发送者mid的HASH
+                it.id,                  # id <-> 弹幕dmid: int32
+                it.content              # content <-> 弹幕内容
+            )
+        )
+    """
+    <d p="490.19100,1,25,16777215,1584268892,0,a16fe0dd,29950852386521095">从结尾回来看这里，更感动了！</d>
+    """
     
-    print("获取日期: ", params['date'])
-    print("获取条数: ", len(danmaku_seg.elems))
+    return res
 
-def 获取BAS弹幕专包():
-    AVID = 2
-    CID = 62131
-    url = f'https://api.bilibili.com/x/v2/dm/web/view?type=1&oid={CID}&pid={AVID}'
+def 获取BAS弹幕专包(cid: int):
+    url = f'https://api.bilibili.com/x/v2/dm/web/view?type=1&oid={cid}'
 
     data = requests.get(url, cookies=cookies, headers=UserAgent)
     target = BasDanmaku.DmWebViewReply()
@@ -94,4 +125,4 @@ def 获取BAS弹幕专包():
     # 使用普通分段包弹幕的proto结构体反序列化此bin数据
 
 if __name__ == '__main__':
-    pass
+    获取BAS弹幕专包(1, 1)
