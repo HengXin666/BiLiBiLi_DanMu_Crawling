@@ -1,7 +1,6 @@
 import os
 import json
 import time
-import yearDaysUitls
 
 def loadConfig() -> dict:
     """
@@ -20,8 +19,14 @@ def loadConfig() -> dict:
                 'isGetAllDanmMaKu': True, # 获取全弹幕
                 'isGetToNowTime': True,   # 获取直到当前时间 
             },
+            'net': {
+                'UserAgent': {
+                    "User-Agent": "Modified-Since,Pragma,Last-Modified,Cache-Control,Expires,Content-Type,Access-Control-Allow-Credentials,DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Cache-Webcdn,X-Bilibili-Key-Real-Ip,X-Upos-Auth,Range"
+                },
+                'cookies': [],
+            },
             'run': {
-                'outFile': '', # 保存的文件名称
+                'outFile': 'danmaku.xml', # 保存的文件名称
                 'yearFamily': {
                     'list': [],
                     'nowAllIndex': -1 # 开始爬取日期, -1 代表需要从二分开始
@@ -29,9 +34,9 @@ def loadConfig() -> dict:
             }
         }
         writeConfig(defaultConfig)
-    else:
-        with open(config_path, 'r') as configfile:
-            return json.load(configfile)
+
+    with open(config_path, 'r') as configfile:
+        return json.load(configfile)
 
     return defaultConfig
 

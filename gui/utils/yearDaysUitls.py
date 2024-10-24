@@ -151,17 +151,16 @@ class YearFamily:
         self.nowAllIndex += 1
         return res
 
-    def toJson(self):
-        """将年份族管理类序列化为 JSON"""
-        return json.dumps({
+    def toJsonDict(self) -> dict:
+        """将年份族管理类序列化为 JSON Dict"""
+        return {
             'list': [{"year": yd.year, "days": yd.toString()} for yd in self.year_days_list],
-            'nowAllIndex': -1 # 开始爬取日期, -1 代表需要从二分开始
-        })
+            'nowAllIndex': self.nowAllIndex # 开始爬取日期, -1 代表需要从二分开始
+        }
 
     @classmethod
-    def fromJson(cls, json_data):
+    def fromJson(cls, data: dict):
         """从 JSON 反序列化年份族管理类"""
-        data = json.loads(json_data)
         instance = cls(data['list'][0]['year'], data['list'][-1]['year'])
         for entry in data['list']:
             year_days = YearDays(entry['year'])

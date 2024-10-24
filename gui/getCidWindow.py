@@ -117,7 +117,7 @@ class VideoInfoApp:
             if (bv != None):
                 self.data = videoApi.获取视频信息(bv)
                 if self.data[0] != 0:
-                    self.info_label['text'] = f"[错误]: BiliBili Api 异常: [{"请求错误" if self.data[0] == -400 else "无视频"}]; 对于 BV{bv}"
+                    self.info_label['text'] = f"[错误]: BiliBili Api 异常: [{'请求错误' if self.data[0] == -400 else '无视频'}]; 对于 BV{bv}"
                     return
                 self.data = self.data[1]
             else:

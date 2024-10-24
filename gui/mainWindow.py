@@ -1,15 +1,20 @@
 import tkinter as tk
 from tkinter import messagebox, font, simpledialog
 import datetime
+
 from .getCidWindow import VideoInfoApp
 from .api.reqDataSingleton import ReqDataSingleton
+from .credentialManager import CredentialManager
 from . import tkcalendar
-# from api import *
+
 
 class VideoScraperUI:
     def __init__(self, master):
         self.master = master
         self.master.title("弹幕爬取工具 V1.0.0 By Heng_Xin")
+
+        self.isGetAllDanmMaKu = tk.BooleanVar(value=ReqDataSingleton().isGetAllDanmMaKu)
+        self.isGetToNowTime = tk.BooleanVar(value=ReqDataSingleton().isGetToNowTime)
 
         # 自定义字体
         self.custom_font = font.Font(family="黑体", size=14)
@@ -23,28 +28,22 @@ class VideoScraperUI:
         self.get_cid_button = tk.Button(master, text="获取CID", command=self.getCidWindow, font=self.custom_font)
         self.get_cid_button.grid(row=0, column=1, padx=10, pady=10, sticky='ew')
 
-        # 起始日期
+        # 日期范围
         tk.Label(master, text="爬取范围:").grid(row=1, column=0, padx=10, pady=10, sticky='ew')
-        obj = tkcalendar.Datepicker(master, (1, 1))  # 初始化类为对象
-        self.startstamp = obj.start_date.get()  # 获取开始时期
-        self.endstamp = obj.end_date.get()
+        self.dateObj = tkcalendar.Datepicker(master, (1, 1))  # 初始化类为对象
+        self.dateObj.start_date.set(ReqDataSingleton().startDate)
+        self.dateObj.end_date.set(ReqDataSingleton().endDate)
 
-        # self.start_date_entry = tk.Entry(master, font=self.custom_font)
-        # self.Button_test.grid(row=1, column=1, padx=10, pady=10, sticky='ew')
-
-        # 结束日期
-        # self.end_date_label = tk.Label(master, text="结束日期 (YYYY-MM-DD):", font=self.custom_font)
-        # self.end_date_label.grid(row=2, column=0, padx=10, pady=10, sticky='w')
-        # self.end_date_entry = tk.Entry(master, font=self.custom_font)
-        # self.end_date_entry.grid(row=2, column=1, padx=10, pady=10, sticky='ew')
+        # 保存到文件
+        tk.Label(master, text="保存文件名:").grid(row=2, column=0, padx=10, pady=10, sticky='e')
+        self.outFileBtn = tk.Button(master, text=ReqDataSingleton().outFile, command=self.setOutFile)
+        self.outFileBtn.grid(row=2, column=1, padx=10, pady=10, sticky='ew')
 
         # 复选框
-        self.binary_scrape_var = tk.IntVar()
-        self.binary_scrape_check = tk.Checkbutton(master, text="二分爬取全弹幕", variable=self.binary_scrape_var, font=self.custom_font)
+        self.binary_scrape_check = tk.Checkbutton(master, text="二分爬取全弹幕", variable=self.isGetAllDanmMaKu, font=self.custom_font, command=self.updateIsGetAllDanmMaKu)
         self.binary_scrape_check.grid(row=3, column=0, padx=10, pady=5, sticky='w')
 
-        self.continue_scrape_var = tk.IntVar()
-        self.continue_scrape_check = tk.Checkbutton(master, text="始终爬取到当天", variable=self.continue_scrape_var, font=self.custom_font)
+        self.continue_scrape_check = tk.Checkbutton(master, text="始终爬取到当天", variable=self.isGetToNowTime, font=self.custom_font, command=self.updateIsGetToNowTime)
         self.continue_scrape_check.grid(row=3, column=1, padx=10, pady=5, sticky='w')
 
         # 控制按钮
@@ -75,6 +74,7 @@ class VideoScraperUI:
         self.settings_menu.add_command(label="切换主题 (有Bug)", command=self.toggle_theme)
         self.settings_menu.add_command(label="自定义字体大小", command=self.set_font_size)
         self.menu_bar.add_cascade(label="设置", menu=self.settings_menu)
+        self.menu_bar.add_command(label="配置凭证", command=self.setCookies)
         self.menu_bar.add_command(label="关于", command=self.show_about)
 
         master.config(menu=self.menu_bar)
@@ -89,9 +89,34 @@ class VideoScraperUI:
         master.grid_rowconfigure(0, weight=1)
         master.grid_columnconfigure(1, weight=1)
 
+    def setCookies(self):
+        child_window = tk.Toplevel()
+        CredentialManager(child_window)
+        child_window.mainloop()
+
+    def setOutFile(self):
+        # 弹出输入对话框
+        while True:
+            user_input = simpledialog.askstring("输入: [文件名.xml]", "请输入文件名(.xml):")
+            if user_input is None:
+                return
+            if len(user_input) >= 4:
+                ReqDataSingleton().outFile = self.outFileBtn['text'] = user_input
+                return
+
+    def updateIsGetAllDanmMaKu(self):
+        if self.isGetAllDanmMaKu.get():
+            ReqDataSingleton().isGetAllDanmMaKu = True
+        else:
+            ReqDataSingleton().isGetAllDanmMaKu = False
+
+    def updateIsGetToNowTime(self):
+        if self.isGetToNowTime.get():
+            ReqDataSingleton().isGetToNowTime = True
+        else:
+            ReqDataSingleton().isGetToNowTime = False
 
     def setCid(self, cid: int):
-        print(cid)
         ReqDataSingleton().cid = cid
         self.cid_label['text'] = f"视频CID: {ReqDataSingleton().cid}"
 
@@ -147,11 +172,17 @@ class VideoScraperUI:
         if size:
             self.custom_font.configure(size=size)
             self.update_theme()
+    
+    def save(self):
+        ReqDataSingleton().startDate = self.dateObj.start_date.get()
+        ReqDataSingleton().endDate = self.dateObj.end_date.get()
+        ReqDataSingleton().save() # 保存
 
 def start() -> None:
     root = tk.Tk()
     app = VideoScraperUI(root)
     root.mainloop()
+    app.save()
 
 if __name__ == "__main__":
     start()
