@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import threading
 import time
-import json
+import random
 from ..utils import configUtils
 from ..utils import yearDaysUitls
 
@@ -49,8 +49,9 @@ class ReqDataSingleton:
         self.isGetAllDanmMaKu = bool(data.get('settings', {}).get('isGetAllDanmMaKu', True))
         self.isGetToNowTime = bool(data.get('settings', {}).get('isGetToNowTime', True))
         
-        self.yearList = yearDaysUitls.YearFamily(2009, int(time.strftime("%Y", time.localtime())))
+        self.yearList = None # yearDaysUitls.YearFamily(2009, int(time.strftime("%Y", time.localtime())))
         if (len(data.get('run', {}).get('yearFamily', {}).get("list", [])) > 0):
+            self.yearList = yearDaysUitls.YearFamily(2024, 2024)
             self.yearList.fromJson(data.get('run', {}).get('yearFamily', {}))
         self.outFile = data.get('run', {}).get('outFile', "danmaku.xml")
 
@@ -76,7 +77,10 @@ class ReqDataSingleton:
             },
             'run': {
                 'outFile': self.outFile, # 保存的文件名称
-                'yearFamily': self.yearList.toJsonDict(), # 爬取记录
+                'yearFamily': self.yearList.toJsonDict() if self.yearList != None else {
+                    "list": [],
+                    "nowAllIndex": -1
+                }, # 爬取记录
             }
         }
         configUtils.writeConfig(defaultConfig)
@@ -86,7 +90,7 @@ class ReqDataSingleton:
         从凭证列表中随机获取一个Cookies
         """
         return {
-            'SESSDATA': round(self.cookies)
+            'SESSDATA': random.choice(self.cookies)
         }
 
 if __name__ == '__main__':

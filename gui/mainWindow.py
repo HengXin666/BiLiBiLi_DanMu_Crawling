@@ -1,10 +1,17 @@
+import datetime
+import queue
+import threading
+import time
+import random
 import tkinter as tk
 from tkinter import messagebox, font, simpledialog
-import datetime
 
 from .getCidWindow import VideoInfoApp
 from .api.reqDataSingleton import ReqDataSingleton
+from .api.danMaKuApi import getHistoricalDanMaKu, getBasDanMaKu
 from .credentialManager import CredentialManager
+from .utils.yearDaysUitls import YearFamily
+from .utils.danMaKuXmlUtils import DanMaKuXmlUtils
 from . import tkcalendar
 
 
@@ -47,10 +54,10 @@ class VideoScraperUI:
         self.continue_scrape_check.grid(row=3, column=1, padx=10, pady=5, sticky='w')
 
         # 控制按钮
-        self.scrape_button = tk.Button(master, text="开始爬取", command=self.toggle_scrape, font=self.custom_font)
+        self.scrape_button = tk.Button(master, text="开始爬取", command=self.toggleScrape, font=self.custom_font)
         self.scrape_button.grid(row=4, column=0, padx=10, pady=10, sticky='ew')
 
-        self.continue_button = tk.Button(master, text="继续爬取", command=self.continue_scrape, font=self.custom_font)
+        self.continue_button = tk.Button(master, text="继续爬取", command=self.continueScrape, font=self.custom_font)
         self.continue_button.grid(row=4, column=1, padx=10, pady=10, sticky='ew')
 
         # 日志框
@@ -71,23 +78,31 @@ class VideoScraperUI:
         # 工具栏
         self.menu_bar = tk.Menu(master)
         self.settings_menu = tk.Menu(self.menu_bar, tearoff=0)
-        self.settings_menu.add_command(label="切换主题 (有Bug)", command=self.toggle_theme)
-        self.settings_menu.add_command(label="自定义字体大小", command=self.set_font_size)
+        self.settings_menu.add_command(label="切换主题 (有Bug)", command=self.toggleTheme)
+        self.settings_menu.add_command(label="自定义字体大小", command=self.setFontSize)
         self.menu_bar.add_cascade(label="设置", menu=self.settings_menu)
         self.menu_bar.add_command(label="配置凭证", command=self.setCookies)
-        self.menu_bar.add_command(label="关于", command=self.show_about)
-
+        self.menu_bar.add_command(label="关于", command=self.showAbout)
         master.config(menu=self.menu_bar)
 
         # 初始化为浅色模式
         self.is_dark_mode = False
-        self.update_theme()
-
-        self.is_scraping = False
+        self.updateTheme()
 
         # 允许自适应布局
         master.grid_rowconfigure(0, weight=1)
         master.grid_columnconfigure(1, weight=1)
+
+        ########################################################
+        self.running = False
+        self.queue = queue.Queue() # 线程安全
+        self.dmIdCnt = set() # 弹幕id哈希, 防止重复
+        self.allDmCnt = 0    # 当前已经爬取的弹幕数量
+        self.seniorDmCnt = 0 # 当前高级弹幕数量
+        self.thread = None   # 初始化线程
+        self.isThreadExit = False  # 是否要求子线程退出
+
+        self.updateReq() # 启动一个事件循环
 
     def setCookies(self):
         child_window = tk.Toplevel()
@@ -96,7 +111,7 @@ class VideoScraperUI:
 
     def setOutFile(self):
         # 弹出输入对话框
-        while True:
+        while not self.running:
             user_input = simpledialog.askstring("输入: [文件名.xml]", "请输入文件名(.xml):")
             if user_input is None:
                 return
@@ -125,21 +140,161 @@ class VideoScraperUI:
         VideoInfoApp(child_window, self.setCid)
         child_window.mainloop()
 
-    def toggle_scrape(self):
-        if not self.is_scraping:
-            self.is_scraping = True
+    def updateButtonTextByRunning(self):
+        """
+        通过`running`更新按钮文本
+        """
+        if self.running:
             self.scrape_button.config(text="终止爬取")
-            self.add_log("开始爬取...", "green")
+            self.continue_button.config(text='暂停爬取')
         else:
-            if messagebox.askyesno("确认", "确定要终止爬取吗？"):
-                self.is_scraping = False
-                self.scrape_button.config(text="开始爬取")
-                self.add_log("终止爬取", "red")
+            self.isThreadExit = True # 终止子线程
+            self.scrape_button.config(text="开始爬取")
+            self.continue_button.config(text='继续爬取')
 
-    def continue_scrape(self):
-        self.add_log("继续爬取功能尚未实现", "yellow")
+    def _joinThread(self):
+        """
+        停止子线程, 并且回收
+        """
+        self.thread.join()
+        self.thread = None
 
-    def add_log(self, message: str, color: str):
+    def _startThread(self):
+        """
+        开启子线程
+        """
+        while self.thread != None:
+            self.isThreadExit = True
+            self._joinThread()
+        self.isThreadExit = False
+        self.thread = threading.Thread(target=self.runReq)
+        self.thread.start()
+
+    def toggleScrape(self):
+        if not self.running: # 开始爬取            
+            if ReqDataSingleton().yearList != None and not messagebox.askyesno("注意: 真的要重新开始爬取吗?", "点击[开始爬取]是重新爬取;\n会清空之前的记录, 请做好备份!\n(继续爬取的按钮在旁边)"):
+                self.addLog("您取消了重新爬取", "red")
+                return
+            self.running = True
+            self.addLog("开始重新爬取...", "green")
+            ReqDataSingleton().yearList = YearFamily(2009, int(time.strftime("%Y", time.localtime()))) if ReqDataSingleton().isGetAllDanmMaKu else YearFamily(ReqDataSingleton().startDate, ReqDataSingleton().endDate)
+            self._startThread()
+        else:
+            if messagebox.askyesno("确认", "确定要终止爬取吗?"):
+                self.running = False
+                self.addLog("终止爬取", "red")
+                self.save()
+        self.updateButtonTextByRunning()
+    
+    def updateReq(self):
+        """
+        主线程: 更新数据
+        """
+        try:
+            while True:
+                item = self.queue.get_nowait()
+                if isinstance(item, str):
+                    # 显示消息
+                    self.addLog(item, "#990099")
+                    self.status_label['text'] = f"已爬取: {self.allDmCnt} 条弹幕; 其中有 {self.seniorDmCnt} 条高级弹幕"
+                elif isinstance(item, list):
+                    # 写入到文件
+                    DanMaKuXmlUtils.writeDmToXml(ReqDataSingleton().outFile, item)
+        except queue.Empty:
+            pass
+        self.master.after(1000, self.updateReq)
+
+    def getDanMaKu(self, date: str) -> bool:
+        """
+        爬取弹幕, 并且保存
+        """
+        if self.isThreadExit:
+            raise ValueError("程序已退出")
+        try:
+            dmList = getHistoricalDanMaKu(date, ReqDataSingleton().cid)
+            writeXmlDm = []
+            seniorDmCnt = 0
+            nowAdd = 0
+            for it in dmList:
+                if it[7] not in self.dmIdCnt:
+                    self.dmIdCnt.add(it[7])
+                    # 写入弹幕
+                    writeXmlDm.append(
+                        f'<d p="f{it[0]},{it[1]},{it[2]},{it[3]},{it[4]},{it[5]},{it[6]},{it[7]}">{it[8]}</d>\n'
+                    )
+                    if it[1] == 7:
+                        seniorDmCnt += 1
+                    nowAdd += 1
+            self.allDmCnt += nowAdd
+            self.seniorDmCnt += seniorDmCnt
+            print(dmList)
+            self.queue.put(f"爬取 {date} 获取 {len(dmList)} 条弹幕; 新增 {nowAdd} 条弹幕, 高级弹幕新增 {seniorDmCnt} 条.")
+            self.queue.put(writeXmlDm)
+            return True
+        except:
+            print(date, "没有弹幕")
+            return False
+        finally:
+            # 随机暂停
+            sleepTime = random.uniform(8, 15)
+            for _ in range(int(sleepTime)):
+                time.sleep(1)
+                if self.isThreadExit:
+                    raise ValueError("程序已退出")
+            time.sleep(sleepTime - int(sleepTime))
+
+    def runReq(self):
+        """
+        子线程: 爬取数据
+        """
+        # 看看需要保存弹幕的文件在不在, 如果存在, 则继续爬取, 否则新建文件
+        if not DanMaKuXmlUtils.initXmlHead(ReqDataSingleton().outFile, ReqDataSingleton().cid):
+            # 文件存在
+            lineLen = DanMaKuXmlUtils.isLineCountGreaterThan(ReqDataSingleton().outFile)
+            # 读取最后 min(3000, lineLen) 行
+            # 并且加入 hash
+            res = DanMaKuXmlUtils.readLastNLines(ReqDataSingleton().outFile, lineLen)
+            for _ in res:
+                print(_)
+            return
+
+        try:
+            if ReqDataSingleton().yearList.nowAllIndex == -1:
+                if ReqDataSingleton().isGetAllDanmMaKu: # 二分爬取全弹幕
+                    ReqDataSingleton().yearList.findBoundary(self.getDanMaKu)
+                else:
+                    ReqDataSingleton().yearList.nowAllIndex = 0
+            
+            while self.running:
+                date = ReqDataSingleton().yearList.next()
+                self.getDanMaKu(date)
+                if date == ReqDataSingleton().endDate(): # 爬取完毕
+                    self.running = False
+                    self.queue.put(f'爬取 cid: {ReqDataSingleton().cid} 完成!')
+                    break
+        except ValueError:
+            print("子线程已退出")
+        # except Exception as e:
+        #     print(f"异常捕获: {e}")
+            self.running = False
+
+    def continueScrape(self):
+        """
+        继续爬取
+        """
+        if self.running:
+            self.addLog("暂停爬取", "yellow")
+            self.save()
+        else:
+            self.addLog("继续爬取", "yellow")
+            self._startThread()
+        self.running = not self.running
+        self.updateButtonTextByRunning()
+
+    def addLog(self, message: str, color: str):
+        """
+        添加一条日志
+        """
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         log_message = f"[{timestamp}]: {message}\n"
         self.log_text.insert(tk.END, log_message, color)
@@ -148,14 +303,23 @@ class VideoScraperUI:
         self.log_text.tag_configure(color, foreground=color)
         self.log_text.tag_add(color, "end-1c linestart", "end")
 
-    def show_about(self):
+    def showAbout(self):
+        """
+        关于界面
+        """
         messagebox.showinfo("关于", "视频爬取工具 v1.0")
 
-    def toggle_theme(self):
+    def toggleTheme(self):
+        """
+        切换主题逻辑
+        """
         self.is_dark_mode = not self.is_dark_mode
-        self.update_theme()
+        self.updateTheme()
 
-    def update_theme(self):
+    def updateTheme(self):
+        """
+        进行主题切换
+        """
         bg_color = "#171717" if self.is_dark_mode else "white"
         fg_color = "white" if self.is_dark_mode else "#171717"
         self.master.configure(bg=bg_color)
@@ -167,11 +331,14 @@ class VideoScraperUI:
         # self.continue_scrape_check.config(bg=bg_color, fg=fg_color)
         self.log_text.configure(bg="#282828")
 
-    def set_font_size(self):
+    def setFontSize(self):
+        """
+        设置字体大小
+        """
         size = simpledialog.askinteger("字体大小", "输入字体大小:", minvalue=8, maxvalue=30)
         if size:
             self.custom_font.configure(size=size)
-            self.update_theme()
+            self.updateTheme()
     
     def save(self):
         ReqDataSingleton().startDate = self.dateObj.start_date.get()
@@ -183,6 +350,10 @@ def start() -> None:
     app = VideoScraperUI(root)
     root.mainloop()
     app.save()
+    app.running = False
+    app.isThreadExit = True
+    print("等待退出...(2秒)")
+    time.sleep(2)
 
 if __name__ == "__main__":
     start()

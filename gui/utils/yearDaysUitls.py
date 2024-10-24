@@ -96,11 +96,6 @@ class YearFamily:
         self.year_days_list = [YearDays(year) for year in range(start_year, end_year + 1)]
         self.nowAllIndex = -1
 
-    def funX(self, date_str):
-        """检查特定日期是否存在资源"""
-        # 此方法由外部定义，实际业务逻辑会根据需要实现
-        pass  # 实际使用中替换为具体实现
-
     def _indexToArrIndex(self, index: int) -> tuple[int, int]:
         """从ALLIndex转为 Arr Index, 即 year_days_list[res[0]][res[1]]"""
         for i in range(len(self.year_days_list)):
@@ -113,8 +108,12 @@ class YearFamily:
             len(self.year_days_list[len(self.year_days_list) - 1]) - 1
         )
 
-    def findBoundary(self):
-        """找到资源存在的边界"""
+    def findBoundary(self, callback):
+        """
+        二分得出有弹幕的开始日期
+        
+        `callback`判断函数, 传参是日期(`2024-10-24`)
+        """
         low = 0
         high = sum(366 if yd._is_leap_year(yd.year) else 365 for yd in self.year_days_list) - 1
 
@@ -130,7 +129,7 @@ class YearFamily:
                     low = mid + 1
             else:
                 # 标记查找过的日期
-                if self.funX(date):
+                if callback(date):
                     self.year_days_list[arrIndex[0]].days[arrIndex[1]] = '1'  # 资源存在
                     high = mid  # 向左查找
                 else:
@@ -138,12 +137,11 @@ class YearFamily:
                     low = mid + 1  # 向右查找
 
         self.nowAllIndex = low
-        return low
 
     def getDateFromAllIndex(self, index) -> str:
         """从ALL索引获取日期"""
-        idx = year_family._indexToArrIndex(index)
-        return year_family.year_days_list[idx[0]].getDateByIndex(idx[1])
+        idx = self._indexToArrIndex(index)
+        return self.year_days_list[idx[0]].getDateByIndex(idx[1])
 
     def next(self):
         """获取下一个日期"""

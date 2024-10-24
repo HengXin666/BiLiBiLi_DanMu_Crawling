@@ -1,6 +1,12 @@
 # Python bytecode
 *.pyc
 
+# 配置
+config/
+
+# 输出
+output/
+
 # Logs
 *.log
 
