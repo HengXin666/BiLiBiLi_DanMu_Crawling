@@ -1,18 +1,10 @@
 import tkinter as tk
 from tkinter import messagebox, font, simpledialog
 import datetime
-
+from getCidWindow import VideoInfoApp
+from api.reqDataSingleton import ReqDataSingleton
+import tkcalendar
 # from api import *
-
-def open_child_window(callback):
-    child_window = tk.Toplevel()
-    child_window.title("从AV/BV获取Cid")
-
-    # 在子窗口中添加一个按钮
-    btn_child = tk.Button(child_window, text="Child Button", command=lambda: callback(
-        "开始爬取...", "green"
-    ))
-    btn_child.pack()
 
 class VideoScraperUI:
     def __init__(self, master):
@@ -23,25 +15,28 @@ class VideoScraperUI:
         self.custom_font = font.Font(family="黑体", size=14)
         
         # 视频CID输入
-        self.cid_label = tk.Label(master, text="视频CID: ", font=self.custom_font)
+        self.cid_label = tk.Label(master, text=f"视频CID: {ReqDataSingleton().cid}", font=self.custom_font)
         self.cid_label.grid(row=0, column=0, padx=10, pady=10, sticky='w')
 
         # 获取CID
         # 创建按钮，点击按钮时打开子窗口，并传递回调函数
-        self.get_cid_button = tk.Button(master, text="获取CID", command=lambda: open_child_window(self.add_log), font=self.custom_font)
+        self.get_cid_button = tk.Button(master, text="获取CID", command=self.getCidWindow, font=self.custom_font)
         self.get_cid_button.grid(row=0, column=1, padx=10, pady=10, sticky='ew')
 
         # 起始日期
-        self.start_date_label = tk.Label(master, text="起始日期 (YYYY-MM-DD):", font=self.custom_font)
-        self.start_date_label.grid(row=1, column=0, padx=10, pady=10, sticky='w')
-        self.start_date_entry = tk.Entry(master, font=self.custom_font)
-        self.start_date_entry.grid(row=1, column=1, padx=10, pady=10, sticky='ew')
+        tk.Label(master, text="爬取范围:").grid(row=1, column=0, padx=10, pady=10, sticky='ew')
+        obj = tkcalendar.Datepicker(master, (1, 1))  # 初始化类为对象
+        self.startstamp = obj.start_date.get()  # 获取开始时期
+        self.endstamp = obj.end_date.get()
+
+        # self.start_date_entry = tk.Entry(master, font=self.custom_font)
+        # self.Button_test.grid(row=1, column=1, padx=10, pady=10, sticky='ew')
 
         # 结束日期
-        self.end_date_label = tk.Label(master, text="结束日期 (YYYY-MM-DD):", font=self.custom_font)
-        self.end_date_label.grid(row=2, column=0, padx=10, pady=10, sticky='w')
-        self.end_date_entry = tk.Entry(master, font=self.custom_font)
-        self.end_date_entry.grid(row=2, column=1, padx=10, pady=10, sticky='ew')
+        # self.end_date_label = tk.Label(master, text="结束日期 (YYYY-MM-DD):", font=self.custom_font)
+        # self.end_date_label.grid(row=2, column=0, padx=10, pady=10, sticky='w')
+        # self.end_date_entry = tk.Entry(master, font=self.custom_font)
+        # self.end_date_entry.grid(row=2, column=1, padx=10, pady=10, sticky='ew')
 
         # 复选框
         self.binary_scrape_var = tk.IntVar()
@@ -61,19 +56,23 @@ class VideoScraperUI:
 
         # 日志框
         self.log_frame = tk.Frame(master)
-        self.log_frame.grid(row=0, column=2, rowspan=6, padx=10, pady=10)
+        self.log_frame.grid(row=1, column=2, rowspan=6, padx=10, pady=10)
         
         self.log_text = tk.Text(self.log_frame, width=40, height=20, font=self.custom_font)
         self.log_text.pack(expand=True, fill='both')
 
         # 状态栏
         self.status_label = tk.Label(master, text="[状态栏]", font=self.custom_font)
-        self.status_label.grid(row=5, column=2, padx=10, pady=5)
+        self.status_label.grid(row=0, column=2, padx=10, pady=5)
+
+        # 摘要栏
+        self.info_label = tk.Label(master, text="摘要:", font=self.custom_font)
+        self.info_label.grid(row=5, column=0, padx=10, pady=5)
 
         # 工具栏
         self.menu_bar = tk.Menu(master)
         self.settings_menu = tk.Menu(self.menu_bar, tearoff=0)
-        self.settings_menu.add_command(label="切换主题", command=self.toggle_theme)
+        self.settings_menu.add_command(label="切换主题 (有Bug)", command=self.toggle_theme)
         self.settings_menu.add_command(label="自定义字体大小", command=self.set_font_size)
         self.menu_bar.add_cascade(label="设置", menu=self.settings_menu)
         self.menu_bar.add_command(label="关于", command=self.show_about)
@@ -89,6 +88,17 @@ class VideoScraperUI:
         # 允许自适应布局
         master.grid_rowconfigure(0, weight=1)
         master.grid_columnconfigure(1, weight=1)
+
+
+    def setCid(self, cid: int):
+        print(cid)
+        ReqDataSingleton().cid = cid
+        self.cid_label['text'] = f"视频CID: {ReqDataSingleton().cid}"
+
+    def getCidWindow(self):
+        child_window = tk.Toplevel()
+        VideoInfoApp(child_window, self.setCid)
+        child_window.mainloop()
 
     def toggle_scrape(self):
         if not self.is_scraping:

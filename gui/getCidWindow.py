@@ -33,6 +33,10 @@ class VideoInfoApp:
         self.tree.configure(yscrollcommand=self.scrollbar.set)
         self.scrollbar.grid(row=1, column=3, sticky='ns')
 
+        # 提示文本
+        self.info_label = tk.Label(root, text="[提示]: 双击[列表项]就是选择!", font=custom_font)
+        self.info_label.grid(row=2, column=0, columnspan=3, padx=5, pady=5, sticky="nsew")
+
         # 调整布局
         root.grid_rowconfigure(1, weight=1)
         root.grid_columnconfigure(0, weight=1)
@@ -96,26 +100,38 @@ class VideoInfoApp:
 
 
     def getInfo(self):
+        def _onDoubleClick(event):
+            # 获取当前选中的行
+            selected_item = self.tree.selection()
+            if selected_item:
+                item_values = self.tree.item(selected_item, 'values')
+                cid = item_values[1]
+                self.callback(int(cid))
         # 清除之前的内容
         for item in self.tree.get_children():
             self.tree.delete(item)
 
         try:
+            # 测试 https://www.bilibili.com/video/BV1Wx411F7Hs/
             bv = self.extractBv()
             if (bv != None):
                 self.data = videoApi.获取视频信息(bv)
                 if self.data[0] != 0:
-                    print("出错啦:", self.data[0])
+                    self.info_label['text'] = f"[错误]: BiliBili Api 异常: [{"请求错误" if self.data[0] == -400 else "无视频"}]; 对于 BV{bv}"
+                    return
                 self.data = self.data[1]
             else:
-                print("无法获取av/bv号")
+                self.info_label['text'] = "[错误]: 无法获取av/bv号, 链接可能有问题, 请人工输入av/bv号"
+                return
         except:
-            print("网络出错啦~")
+            self.info_label['text'] = "[错误]: 网络出错啦~"
             return
+        self.info_label['text'] = "[提示]: 双击[列表项]就是选择!"
 
         for it in self.data:
             self.tree.insert("", "end", values=(it['page'], it['cid'], it['part']))
-            self.tree.bind("<Double-1>", lambda event: self.callback(event))
+
+        self.tree.bind("<Double-1>", _onDoubleClick)
 
 if __name__ == "__main__":
     root = tk.Tk()

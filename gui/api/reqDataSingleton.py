@@ -1,9 +1,22 @@
 # -*- coding: utf-8 -*-
-import math
+import threading
+
+def singleton(cls):
+    instances = {}
+    lock = threading.Lock()
+
+    def get_instance(*args, **kwargs):
+        if cls not in instances:
+            with lock:
+                if cls not in instances:
+                    instances[cls] = cls(*args, **kwargs)
+        return instances[cls]
+    return get_instance
 
 """
 请求信息单例
 """
+@singleton
 class ReqDataSingleton:
     _instance = None
 
@@ -15,15 +28,8 @@ class ReqDataSingleton:
             'User-Agent': 'Modified-Since,Pragma,Last-Modified,Cache-Control,Expires,Content-Type,Access-Control-Allow-Credentials,DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Cache-Webcdn,X-Bilibili-Key-Real-Ip,X-Upos-Auth,Range'
         }
         self.cookies = [] # 初始化凭证列表
+        self.cid = -1
 
-    """
-    懒汉单例
-    """
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super(ReqDataSingleton, cls).__new__(cls)
-        return cls._instance
-    
     """
     从凭证列表中随机获取一个Cookies
     """
@@ -37,3 +43,5 @@ if __name__ == '__main__':
     singleton1 = ReqDataSingleton()
     singleton2 = ReqDataSingleton()
     print(singleton1 is singleton2)  # 输出 True，表示是同一个实例
+    ReqDataSingleton().cid = 114
+    print(ReqDataSingleton().cid)
