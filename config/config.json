@@ -1,0 +1,9 @@
+{
+    "settings": {
+        "cid": -1,
+        "startDate": "2009-06-26",
+        "endDate": "2024-10-24",
+        "isGetAllDanmMaKu": true,
+        "isGetToNowTime": true
+    }
+}

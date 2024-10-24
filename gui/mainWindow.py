@@ -1,9 +1,9 @@
 import tkinter as tk
 from tkinter import messagebox, font, simpledialog
 import datetime
-from getCidWindow import VideoInfoApp
-from api.reqDataSingleton import ReqDataSingleton
-import tkcalendar
+from .getCidWindow import VideoInfoApp
+from .api.reqDataSingleton import ReqDataSingleton
+from . import tkcalendar
 # from api import *
 
 class VideoScraperUI:

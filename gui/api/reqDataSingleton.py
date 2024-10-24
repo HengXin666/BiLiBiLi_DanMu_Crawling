@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import threading
+import time
 
 def singleton(cls):
     instances = {}
@@ -13,11 +14,11 @@ def singleton(cls):
         return instances[cls]
     return get_instance
 
-"""
-请求信息单例
-"""
 @singleton
 class ReqDataSingleton:
+    """
+    请求信息单例
+    """
     _instance = None
 
     """
@@ -29,6 +30,8 @@ class ReqDataSingleton:
         }
         self.cookies = [] # 初始化凭证列表
         self.cid = -1
+        self.startDate = '2009-06-26' # 爬取的起始日期
+        self.endDate = time.strftime("%Y-%m-%d", time.localtime()) # 终止日期
 
     """
     从凭证列表中随机获取一个Cookies

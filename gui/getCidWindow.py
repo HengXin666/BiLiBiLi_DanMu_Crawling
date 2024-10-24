@@ -1,7 +1,7 @@
 import tkinter as tk
 import re
 from tkinter import ttk, font
-from api import videoApi
+from .api import videoApi
 
 class VideoInfoApp:
     def __init__(self, root, callback):

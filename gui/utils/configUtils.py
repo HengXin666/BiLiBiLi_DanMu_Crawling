@@ -1,5 +1,7 @@
 import os
 import json
+import time
+import yearDaysUitls
 
 def loadConfig() -> dict:
     """
@@ -12,10 +14,18 @@ def loadConfig() -> dict:
         # 如果文件不存在，创建默认配置
         defaultConfig = {
             'settings': {
-                'username': 'default_user',
-                'password': 'default_password',
-                'timeout': 30,
-                'items': ['item1', 'item2', 'item3']
+                'cid': -1,
+                'startDate': '2009-06-26',
+                'endDate': time.strftime("%Y-%m-%d", time.localtime()),
+                'isGetAllDanmMaKu': True, # 获取全弹幕
+                'isGetToNowTime': True,   # 获取直到当前时间 
+            },
+            'run': {
+                'outFile': '', # 保存的文件名称
+                'yearFamily': {
+                    'list': [],
+                    'nowAllIndex': -1 # 开始爬取日期, -1 代表需要从二分开始
+                }, # 爬取记录
             }
         }
         writeConfig(defaultConfig)
@@ -38,9 +48,7 @@ def writeConfig(config: dict) -> None:
 if __name__ == "__main__":
     config = loadConfig()
 
-    # 修改配置
-    config['settings']['username'] = 'new_username'
-    config['settings']['items'].append('item4')  # 添加新项目
+    print(config)
 
     # 写回配置文件
     writeConfig(config)
