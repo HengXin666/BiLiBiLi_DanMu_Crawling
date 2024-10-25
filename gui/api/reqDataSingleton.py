@@ -38,6 +38,11 @@ class ReqDataSingleton:
         self.isGetAllDanmMaKu = True
         self.isGetToNowTime = True
 
+        ### 爬取间隔时间 [timerMin, timerMax] ###
+        self.timerMin = 8
+        self.timerMax = 15
+        ### 不持久化, 只能每一次配置, 防止遗忘! ###
+
         self.init(configUtils.loadConfig())
     
     def init(self, data: dict):

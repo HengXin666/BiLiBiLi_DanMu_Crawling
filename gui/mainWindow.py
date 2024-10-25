@@ -5,6 +5,7 @@ import time
 import random
 import re
 import tkinter as tk
+import webbrowser
 from tkinter import messagebox, font, simpledialog
 
 from .getCidWindow import VideoInfoApp
@@ -83,6 +84,7 @@ class VideoScraperUI:
         self.settings_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.settings_menu.add_command(label="切换主题 (有Bug)", command=self.toggleTheme)
         self.settings_menu.add_command(label="自定义字体大小", command=self.setFontSize)
+        self.settings_menu.add_command(label="设置爬取间隔", command=self.openTimerSettings)
         self.settings_menu.add_command(label="关闭日志滚动", command=self.setLogGoToEnd)
         self.menu_bar.add_cascade(label="设置", menu=self.settings_menu)
         self.menu_bar.add_command(label="配置凭证", command=self.setCookies)
@@ -163,6 +165,8 @@ class VideoScraperUI:
         if self.running:
             self.scrape_button.config(text="终止爬取")
             self.continue_button.config(text='暂停爬取')
+            if ReqDataSingleton().isGetToNowTime:
+                self.endDate = time.strftime("%Y-%m-%d", time.localtime())
         else:
             self.isThreadExit = True # 终止子线程
             self.scrape_button.config(text="开始爬取")
@@ -252,7 +256,7 @@ class VideoScraperUI:
             self.queue.put("爬取 Bas弹幕专包 出错!")
         finally:
             # 随机暂停
-            sleepTime = random.uniform(8, 15)
+            sleepTime = random.uniform(ReqDataSingleton().timerMin, ReqDataSingleton().timerMax)
             for _ in range(int(sleepTime)):
                 time.sleep(1)
                 if self.isThreadExit:
@@ -287,11 +291,11 @@ class VideoScraperUI:
             self.queue.put(writeXmlDm)
             return len(dmList) > 0
         except:
-            self.queue.put(f"爬取 {date} 出错: 没有弹幕")
+            self.queue.put(f"爬取 {date} 出错: 网络错误, 可能被封禁了!")
             return False
         finally:
             # 随机暂停
-            sleepTime = random.uniform(8, 15)
+            sleepTime = random.uniform(ReqDataSingleton().timerMin, ReqDataSingleton().timerMax)
             for _ in range(int(sleepTime)):
                 time.sleep(1)
                 if self.isThreadExit:
@@ -374,11 +378,63 @@ class VideoScraperUI:
         if self.isLogGoToEnd:
             self.log_text.see(tk.END)
 
+    def openTimerSettings(self):
+        # 创建设置间隔时间的窗口
+        settings_window = tk.Toplevel(self.master)
+        settings_window.title("设置爬取间隔时间")
+        settings_window.geometry("300x300")
+
+        # 最小时间输入
+        tk.Label(settings_window, text="最小时间(秒):").pack(pady=5)
+        self.min_entry = tk.Entry(settings_window)
+        self.min_entry.insert(0, str(ReqDataSingleton().timerMin))  # 默认值
+        self.min_entry.pack(pady=5)
+
+        # 最大时间输入
+        tk.Label(settings_window, text="最大时间(秒):").pack(pady=5)
+        self.max_entry = tk.Entry(settings_window)
+        self.max_entry.insert(0, str(ReqDataSingleton().timerMax))  # 默认值
+        self.max_entry.pack(pady=5)
+
+        # 确认按钮
+        confirm_button = tk.Button(settings_window, text="确认", command=self.updateTimer)
+        confirm_button.pack(pady=10)
+
+    def updateTimer(self):
+        try:
+            # 更新最小和最大时间
+            ReqDataSingleton().timerMin = int(self.min_entry.get())
+            ReqDataSingleton().timerMax = int(self.max_entry.get())
+            self.addLog(f"更新成功: 最小时间 = {ReqDataSingleton().timerMin}, 最大时间 = {ReqDataSingleton().timerMax}", "#CC563F")
+        except ValueError:
+            self.addLog("设置爬取间隔失败!", "red")
+
     def showAbout(self):
         """
         关于界面
         """
-        messagebox.showinfo("关于", "视频爬取工具 v1.0")
+        # 创建一个新的顶级窗口
+        about_window = tk.Toplevel()
+        about_window.title("关于")
+        about_window.geometry("600x240")
+
+        # 添加信息标签
+        tk.Label(about_window, text="弹幕爬取工具 v1.0", font=("黑体", 14)).pack(pady=10)
+
+        # 作者
+        tk.Label(about_window, text="作者: Heng_Xin", font=("黑体", 14), fg="#990099").pack(pady=10)
+
+        # 添加链接标签
+        link = tk.Label(about_window, text="项目地址:\nhttps://github.com/HengXin666/BiLiBiLi_DanMu_Crawling", fg="blue", cursor="hand2", font=("黑体", 14))
+        link.pack()
+        link.bind("<Button-1>", lambda e: webbrowser.open_new("https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling"))  # 替换为你的链接
+
+        tk.Label(about_window, text="当前版本更新时间: 2024-10-25", font=("黑体", 14)).pack(pady=10)
+
+        # 添加关闭按钮
+        close_button = tk.Label(about_window, text="关闭", fg="red", cursor="hand2", font=("黑体", 14))
+        close_button.pack(pady=5)
+        close_button.bind("<Button-1>", lambda e: about_window.destroy())
 
     def toggleTheme(self):
         """
