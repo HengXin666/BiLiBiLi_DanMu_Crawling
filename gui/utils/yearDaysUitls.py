@@ -154,6 +154,13 @@ class YearFamily:
                 return res
             self.nowAllIndex += 1
 
+    def unNext(self):
+        """回退到上一个日期, 并且清除当前日期的操作"""
+        self.nowAllIndex -= 1
+        arrIndex = self._indexToArrIndex(self.nowAllIndex)
+        self.year_days_list[arrIndex[0]].days[arrIndex[1]] = '0'
+
+
     def toJsonDict(self) -> dict:
         """将年份族管理类序列化为 JSON Dict"""
         return {

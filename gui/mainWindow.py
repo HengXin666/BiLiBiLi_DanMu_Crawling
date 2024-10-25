@@ -19,7 +19,7 @@ from . import tkcalendar
 class VideoScraperUI:
     def __init__(self, master):
         self.master = master
-        self.master.title("弹幕爬取工具 V1.0.0 By Heng_Xin")
+        self.master.title("弹幕爬取工具 V1.0.3 By Heng_Xin")
 
         self.isGetAllDanmMaKu = tk.BooleanVar(value=ReqDataSingleton().isGetAllDanmMaKu)
         self.isGetToNowTime = tk.BooleanVar(value=ReqDataSingleton().isGetToNowTime)
@@ -109,6 +109,7 @@ class VideoScraperUI:
         self.seniorDmCnt = 0 # 当前高级弹幕数量
         self.thread = None   # 初始化线程
         self.isThreadExit = False  # 是否要求子线程退出
+        self.isWifiNotGood = False # 是否处于网络错误状态
 
         self.updateReq() # 启动一个事件循环
 
@@ -162,6 +163,11 @@ class VideoScraperUI:
         """
         通过`running`更新按钮文本
         """
+        if self.isWifiNotGood:
+            self.isWifiNotGood = not self.isWifiNotGood
+            if ReqDataSingleton().yearList.nowAllIndex != -1:
+                ReqDataSingleton().yearList.unNext()
+
         if self.running:
             self.scrape_button.config(text="终止爬取")
             self.continue_button.config(text='暂停爬取')
@@ -235,72 +241,90 @@ class VideoScraperUI:
         """
         爬取Bas弹幕专包, 并且保存
         """
-        if self.isThreadExit:
-            raise ValueError("程序已退出")
-        try:
-            dmList = getBasDanMaKu(ReqDataSingleton().cid)
-            writeXmlDm = []
-            nowAdd = 0
-            for it in dmList:
-                if it[7] not in self.dmIdCnt:
-                    self.dmIdCnt.add(it[7])
-                    # 写入弹幕
-                    writeXmlDm.append(
-                        f'<d p="{it[0]},{it[1]},{it[2]},{it[3]},{it[4]},{it[5]},{it[6]},{it[7]}">{it[8]}</d>\n'
-                    )
-                    nowAdd += 1
-            self.allDmCnt += nowAdd
-            self.queue.put(f"爬取 Bas弹幕专包 获取 {len(dmList)} 条弹幕")
-            self.queue.put(writeXmlDm)
-        except:
-            self.queue.put("爬取 Bas弹幕专包 出错!")
-        finally:
-            # 随机暂停
-            sleepTime = random.uniform(ReqDataSingleton().timerMin, ReqDataSingleton().timerMax)
-            for _ in range(int(sleepTime)):
-                time.sleep(1)
-                if self.isThreadExit:
-                    raise ValueError("程序已退出")
-            time.sleep(sleepTime - int(sleepTime))
+        while True:
+            if self.isThreadExit:
+                raise ValueError("程序已退出")
+            try:
+                dmList = getBasDanMaKu(ReqDataSingleton().cid)
+                writeXmlDm = []
+                nowAdd = 0
+                for it in dmList:
+                    if it[7] not in self.dmIdCnt:
+                        self.dmIdCnt.add(it[7])
+                        # 写入弹幕
+                        writeXmlDm.append(
+                            f'<d p="{it[0]},{it[1]},{it[2]},{it[3]},{it[4]},{it[5]},{it[6]},{it[7]}">{it[8]}</d>\n'
+                        )
+                        nowAdd += 1
+                self.allDmCnt += nowAdd
+                self.queue.put(f"爬取 Bas弹幕专包 获取 {len(dmList)} 条弹幕")
+                self.queue.put(writeXmlDm)
+            except:
+                cs += 1
+                self.queue.put(f"爬取 Bas弹幕专包 出错: 网络错误, 可能被封禁了!, 正在重试: {cs}/5 次")
+                if cs >= 5:
+                    self.isThreadExit = True
+                    self.queue.put("程序已终止, 请暂停, 以保存状态!")
+            finally:
+                # 随机暂停
+                sleepTime = random.uniform(ReqDataSingleton().timerMin, ReqDataSingleton().timerMax)
+                self.queue.put(f"等待 {sleepTime} 秒...")
+                for _ in range(int(sleepTime)):
+                    time.sleep(1)
+                    if self.isThreadExit:
+                        raise ValueError("程序已退出")
+                time.sleep(sleepTime - int(sleepTime))
 
 
     def getDanMaKu(self, date: str) -> bool:
         """
         爬取弹幕, 并且保存
         """
-        if self.isThreadExit:
-            raise ValueError("程序已退出")
-        try:
-            dmList = getHistoricalDanMaKu(date, ReqDataSingleton().cid)
-            writeXmlDm = []
-            seniorDmCnt = 0
-            nowAdd = 0
-            for it in dmList:
-                if int(it[7]) not in self.dmIdCnt:
-                    self.dmIdCnt.add(int(it[7]))
-                    # 写入弹幕
-                    writeXmlDm.append(
-                        f'<d p="{it[0]},{it[1]},{it[2]},{it[3]},{it[4]},{it[5]},{it[6]},{it[7]}">{it[8]}</d>\n'
-                    )
-                    if int(it[1]) == 7:
-                        seniorDmCnt += 1
-                    nowAdd += 1
-            self.allDmCnt += nowAdd
-            self.seniorDmCnt += seniorDmCnt
-            self.queue.put(f"爬取 {date} 获取 {len(dmList)} 条弹幕; 新增 {nowAdd} 条弹幕, 高级弹幕新增 {seniorDmCnt} 条.")
-            self.queue.put(writeXmlDm)
-            return len(dmList) > 0
-        except:
-            self.queue.put(f"爬取 {date} 出错: 网络错误, 可能被封禁了!")
-            return False
-        finally:
-            # 随机暂停
-            sleepTime = random.uniform(ReqDataSingleton().timerMin, ReqDataSingleton().timerMax)
-            for _ in range(int(sleepTime)):
-                time.sleep(1)
-                if self.isThreadExit:
-                    raise ValueError("程序已退出")
-            time.sleep(sleepTime - int(sleepTime))
+        cs = 0
+        while True:
+            if self.isThreadExit:
+                raise ValueError("程序已退出")
+                
+            try:
+                dmList = getHistoricalDanMaKu(date, ReqDataSingleton().cid)
+                writeXmlDm = []
+                seniorDmCnt = 0
+                nowAdd = 0
+                for it in dmList:
+                    if int(it[7]) not in self.dmIdCnt:
+                        self.dmIdCnt.add(int(it[7]))
+                        # 写入弹幕
+                        writeXmlDm.append(
+                            f'<d p="{it[0]},{it[1]},{it[2]},{it[3]},{it[4]},{it[5]},{it[6]},{it[7]}">{it[8]}</d>\n'
+                        )
+                        if int(it[1]) == 7:
+                            seniorDmCnt += 1
+                        nowAdd += 1
+                self.allDmCnt += nowAdd
+                self.seniorDmCnt += seniorDmCnt
+                self.queue.put(f"爬取 {date} 获取 {len(dmList)} 条弹幕; 新增 {nowAdd} 条弹幕, 高级弹幕新增 {seniorDmCnt} 条.")
+                self.queue.put(writeXmlDm)
+                return len(dmList) > 0
+            except:
+                cs += 1
+                self.queue.put(f"爬取 {date} 出错: 网络错误, 可能被封禁了!, 正在重试: {cs}/5 次")
+                self.isWifiNotGood = True
+                if cs >= 5:
+                    self.isThreadExit = True
+                    self.isWifiNotGood = False
+                    self.queue.put("程序已终止, 请暂停, 以保存状态!")
+                    if ReqDataSingleton().yearList.nowAllIndex != -1:
+                        ReqDataSingleton().yearList.unNext()
+                continue
+            finally:
+                # 随机暂停
+                sleepTime = random.uniform(ReqDataSingleton().timerMin, ReqDataSingleton().timerMax)
+                self.queue.put(f"等待 {sleepTime} 秒...")
+                for _ in range(int(sleepTime)):
+                    time.sleep(1)
+                    if self.isThreadExit:
+                        raise ValueError("程序已退出")
+                time.sleep(sleepTime - int(sleepTime))
 
     def runReq(self):
         """
@@ -340,14 +364,12 @@ class VideoScraperUI:
                 date = ReqDataSingleton().yearList.next()
                 self.getDanMaKu(date)
                 if date == ReqDataSingleton().endDate: # 爬取完毕
-                    self.running = False
+                    self.isThreadExit = True
                     self.queue.put(f'爬取 cid: {ReqDataSingleton().cid} 完成!')
                     break
         except ValueError:
             print("子线程已退出")
-        # except Exception as e:
-        #     print(f"异常捕获: {e}")
-            self.running = False
+            self.isThreadExit = True
 
     def continueScrape(self):
         """
@@ -419,7 +441,7 @@ class VideoScraperUI:
         about_window.geometry("600x240")
 
         # 添加信息标签
-        tk.Label(about_window, text="弹幕爬取工具 v1.0", font=("黑体", 14)).pack(pady=10)
+        tk.Label(about_window, text="弹幕爬取工具 v1.0.3", font=("黑体", 14)).pack(pady=10)
 
         # 作者
         tk.Label(about_window, text="作者: Heng_Xin", font=("黑体", 14), fg="#990099").pack(pady=10)
