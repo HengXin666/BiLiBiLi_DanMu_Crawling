@@ -74,6 +74,10 @@ pip install requests protobuf
 
 ## 致谢
 
+- [哔哩哔哩 - API 收集整理](https://github.com/SocialSisterYi/bilibili-API-collect)
+
+### 支持
+
 感谢各位的支持, 如果喜欢的话可以点一个`Start`吗?
 
 [![Stargazers repo roster for @HengXin666/BiLiBiLi_DanMu_Crawling](https://reporoster.com/stars/HengXin666/BiLiBiLi_DanMu_Crawling)](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/stargazers)
