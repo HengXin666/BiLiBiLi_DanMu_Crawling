@@ -149,6 +149,7 @@ class YearFamily:
             arrIndex = self._indexToArrIndex(self.nowAllIndex)
             if self.year_days_list[arrIndex[0]].days[arrIndex[1]] == '0':
                 res = self.getDateFromAllIndex(self.nowAllIndex)
+                self.year_days_list[arrIndex[0]].days[arrIndex[1]] = '1'
                 self.nowAllIndex += 1
                 return res
             self.nowAllIndex += 1

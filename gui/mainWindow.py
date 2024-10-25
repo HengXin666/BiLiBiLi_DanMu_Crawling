@@ -83,6 +83,7 @@ class VideoScraperUI:
         self.settings_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.settings_menu.add_command(label="切换主题 (有Bug)", command=self.toggleTheme)
         self.settings_menu.add_command(label="自定义字体大小", command=self.setFontSize)
+        self.settings_menu.add_command(label="关闭日志滚动", command=self.setLogGoToEnd)
         self.menu_bar.add_cascade(label="设置", menu=self.settings_menu)
         self.menu_bar.add_command(label="配置凭证", command=self.setCookies)
         self.menu_bar.add_command(label="关于", command=self.showAbout)
@@ -96,6 +97,8 @@ class VideoScraperUI:
         master.grid_rowconfigure(0, weight=1)
         master.grid_columnconfigure(1, weight=1)
 
+        self.isLogGoToEnd = True
+
         ########################################################
         self.running = False
         self.queue = queue.Queue() # 线程安全
@@ -106,6 +109,13 @@ class VideoScraperUI:
         self.isThreadExit = False  # 是否要求子线程退出
 
         self.updateReq() # 启动一个事件循环
+
+    def setLogGoToEnd(self):
+        if self.isLogGoToEnd:
+            self.settings_menu.entryconfig("关闭日志滚动", label="启用日志滚动")
+        else:
+            self.settings_menu.entryconfig("启用日志滚动", label="关闭日志滚动")
+        self.isLogGoToEnd = not self.isLogGoToEnd
 
     def setCookies(self):
         child_window = tk.Toplevel()
@@ -275,7 +285,7 @@ class VideoScraperUI:
             self.seniorDmCnt += seniorDmCnt
             self.queue.put(f"爬取 {date} 获取 {len(dmList)} 条弹幕; 新增 {nowAdd} 条弹幕, 高级弹幕新增 {seniorDmCnt} 条.")
             self.queue.put(writeXmlDm)
-            return len(writeXmlDm) > 0
+            return len(dmList) > 0
         except:
             self.queue.put(f"爬取 {date} 出错: 没有弹幕")
             return False
@@ -359,6 +369,10 @@ class VideoScraperUI:
         # 改变文本颜色
         self.log_text.tag_configure(color, foreground=color)
         self.log_text.tag_add(color, "end-1c linestart", "end")
+
+        # 确保文本框滚动到最下面
+        if self.isLogGoToEnd:
+            self.log_text.see(tk.END)
 
     def showAbout(self):
         """
