@@ -3,6 +3,7 @@ import queue
 import threading
 import time
 import random
+import re
 import tkinter as tk
 from tkinter import messagebox, font, simpledialog
 
@@ -14,7 +15,6 @@ from .utils.yearDaysUitls import YearFamily
 from .utils.danMaKuXmlUtils import DanMaKuXmlUtils
 from . import tkcalendar
 
-
 class VideoScraperUI:
     def __init__(self, master):
         self.master = master
@@ -25,19 +25,18 @@ class VideoScraperUI:
 
         # 自定义字体
         self.custom_font = font.Font(family="黑体", size=14)
-        
+
         # 视频CID输入
         self.cid_label = tk.Label(master, text=f"视频CID: {ReqDataSingleton().cid}", font=self.custom_font)
         self.cid_label.grid(row=0, column=0, padx=10, pady=10, sticky='w')
 
         # 获取CID
-        # 创建按钮，点击按钮时打开子窗口，并传递回调函数
         self.get_cid_button = tk.Button(master, text="获取CID", command=self.getCidWindow, font=self.custom_font)
         self.get_cid_button.grid(row=0, column=1, padx=10, pady=10, sticky='ew')
 
         # 日期范围
-        tk.Label(master, text="爬取范围:").grid(row=1, column=0, padx=10, pady=10, sticky='ew')
-        self.dateObj = tkcalendar.Datepicker(master, (1, 1))  # 初始化类为对象
+        tk.Label(master, text="爬取范围:").grid(row=1, column=0, padx=10, pady=10, sticky='w')
+        self.dateObj = tkcalendar.Datepicker(master, (1, 1))
         self.dateObj.start_date.set(ReqDataSingleton().startDate)
         self.dateObj.end_date.set(ReqDataSingleton().endDate)
 
@@ -62,18 +61,22 @@ class VideoScraperUI:
 
         # 日志框
         self.log_frame = tk.Frame(master)
-        self.log_frame.grid(row=1, column=2, rowspan=6, padx=10, pady=10)
-        
+        self.log_frame.grid(row=1, column=2, rowspan=5, padx=10, pady=10, sticky='nsew')
+
         self.log_text = tk.Text(self.log_frame, width=40, height=20, font=self.custom_font)
         self.log_text.pack(expand=True, fill='both')
 
         # 状态栏
         self.status_label = tk.Label(master, text="[状态栏]", font=self.custom_font)
-        self.status_label.grid(row=0, column=2, padx=10, pady=5)
+        self.status_label.grid(row=0, column=2, padx=10, pady=10, sticky='nsew')
 
         # 摘要栏
         self.info_label = tk.Label(master, text="摘要:", font=self.custom_font)
-        self.info_label.grid(row=5, column=0, padx=10, pady=5)
+        self.info_label.grid(row=5, column=0, padx=10, pady=5, sticky='w')
+
+        # 配置行和列权重, 以便日志框可以扩展
+        master.grid_rowconfigure(1, weight=1)
+        master.grid_columnconfigure(2, weight=1)
 
         # 工具栏
         self.menu_bar = tk.Menu(master)
@@ -136,6 +139,9 @@ class VideoScraperUI:
         self.cid_label['text'] = f"视频CID: {ReqDataSingleton().cid}"
 
     def getCidWindow(self):
+        """
+        打开获取视频Cid窗口
+        """
         child_window = tk.Toplevel()
         VideoInfoApp(child_window, self.setCid)
         child_window.mainloop()
@@ -195,7 +201,7 @@ class VideoScraperUI:
                 item = self.queue.get_nowait()
                 if isinstance(item, str):
                     # 显示消息
-                    self.addLog(item, "#990099")
+                    self.addLog(item, "#F0F0F0")
                     self.status_label['text'] = f"已爬取: {self.allDmCnt} 条弹幕; 其中有 {self.seniorDmCnt} 条高级弹幕"
                 elif isinstance(item, list):
                     # 写入到文件
@@ -220,7 +226,7 @@ class VideoScraperUI:
                     self.dmIdCnt.add(it[7])
                     # 写入弹幕
                     writeXmlDm.append(
-                        f'<d p="f{it[0]},{it[1]},{it[2]},{it[3]},{it[4]},{it[5]},{it[6]},{it[7]}">{it[8]}</d>\n'
+                        f'<d p="{it[0]},{it[1]},{it[2]},{it[3]},{it[4]},{it[5]},{it[6]},{it[7]}">{it[8]}</d>\n'
                     )
                     if it[1] == 7:
                         seniorDmCnt += 1
@@ -254,9 +260,12 @@ class VideoScraperUI:
             # 读取最后 min(3000, lineLen) 行
             # 并且加入 hash
             res = DanMaKuXmlUtils.readLastNLines(ReqDataSingleton().outFile, lineLen)
-            for _ in res:
-                print(_)
-            return
+            reDmMid = re.compile('<d p="\\d+\\.\\d+,\\d,\\d+,\\d+,\\d+,\\d,[A-Za-z0-9]+,(\\d+)">.*?</d>') # 弹幕id
+            for it in res:
+                item = re.findall(reDmMid, it.decode("utf-8"))[0]
+                item = int(item)
+                if item not in self.dmIdCnt:
+                    self.dmIdCnt.add(item)
 
         try:
             if ReqDataSingleton().yearList.nowAllIndex == -1:

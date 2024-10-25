@@ -19,6 +19,9 @@ class DanMaKuXmlUtils:
             return False
     
     def writeDmToXml(fileName:str, xmlDmList: list):
+        """
+        写入列表内容到文件
+        """
         filePath = os.path.join(outputDir, fileName)
         with open(filePath, 'a', encoding='UTF-8') as f:
             for dm in xmlDmList:
