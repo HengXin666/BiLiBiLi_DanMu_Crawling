@@ -19,7 +19,7 @@ from . import tkcalendar
 class VideoScraperUI:
     def __init__(self, master):
         self.master = master
-        self.master.title("弹幕爬取工具 V1.0.3 By Heng_Xin")
+        self.master.title("弹幕爬取工具 V1.0.5 By Heng_Xin")
 
         self.isGetAllDanmMaKu = tk.BooleanVar(value=ReqDataSingleton().isGetAllDanmMaKu)
         self.isGetToNowTime = tk.BooleanVar(value=ReqDataSingleton().isGetToNowTime)
@@ -64,16 +64,25 @@ class VideoScraperUI:
         self.log_frame = tk.Frame(master)
         self.log_frame.grid(row=1, column=2, rowspan=5, padx=10, pady=10, sticky='nsew')
 
-        self.log_text = tk.Text(self.log_frame, width=40, height=20, font=self.custom_font)
+        # 创建滚动条
+        self.scrollbar = tk.Scrollbar(self.log_frame)
+        self.scrollbar.pack(side='right', fill='y')
+
+        # 创建文本框并关联滚动条
+        self.log_text = tk.Text(self.log_frame, width=40, height=20, font=self.custom_font, yscrollcommand=self.scrollbar.set)
         self.log_text.pack(expand=True, fill='both')
+
+        # 配置滚动条
+        self.scrollbar.config(command=self.log_text.yview)
 
         # 状态栏
         self.status_label = tk.Label(master, text="[状态栏]", font=self.custom_font)
         self.status_label.grid(row=0, column=2, padx=10, pady=10, sticky='nsew')
 
         # 摘要栏
-        self.info_label = tk.Label(master, text="摘要:", font=self.custom_font)
-        self.info_label.grid(row=5, column=0, padx=10, pady=5, sticky='w')
+        # 懒得写了...
+        # self.info_label = tk.Label(master, text="摘要:", font=self.custom_font)
+        # self.info_label.grid(row=5, column=0, padx=10, pady=5, sticky='w')
 
         # 配置行和列权重, 以便日志框可以扩展
         master.grid_rowconfigure(1, weight=1)
@@ -441,7 +450,7 @@ class VideoScraperUI:
         about_window.geometry("600x240")
 
         # 添加信息标签
-        tk.Label(about_window, text="弹幕爬取工具 v1.0.3", font=("黑体", 14)).pack(pady=10)
+        tk.Label(about_window, text="弹幕爬取工具 V1.0.5", font=("黑体", 14)).pack(pady=10)
 
         # 作者
         tk.Label(about_window, text="作者: Heng_Xin", font=("黑体", 14), fg="#990099").pack(pady=10)
