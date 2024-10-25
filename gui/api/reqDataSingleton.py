@@ -51,8 +51,7 @@ class ReqDataSingleton:
         
         self.yearList = None # yearDaysUitls.YearFamily(2009, int(time.strftime("%Y", time.localtime())))
         if (len(data.get('run', {}).get('yearFamily', {}).get("list", [])) > 0):
-            self.yearList = yearDaysUitls.YearFamily(2024, 2024)
-            self.yearList.fromJson(data.get('run', {}).get('yearFamily', {}))
+            self.yearList = yearDaysUitls.YearFamily.fromJson(data.get('run', {}).get('yearFamily', {}))
         self.outFile = data.get('run', {}).get('outFile', "danmaku.xml")
 
         print(self.get_members())

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import requests
+import google.protobuf.text_format as text_format
 from .pb import dm_pb2 as Danmaku
 from .pb import basDm_pb2 as BasDanmaku
 from .reqDataSingleton import ReqDataSingleton
@@ -60,7 +61,6 @@ def DeserializeNormalSegmentedPacketDanMaKu(data) -> list[tuple]:
     return list(map(_extractInfo, danmakuSeg.elems))
 
 def getHistoricalDanMaKu(date: str, cid: int) -> list[tuple]:
-    return [(490.19100, 1, 25, 16777215, 1584268892, 0, "a16fe0dd", 29950852386521095, "内容")]
     """
     获取历史弹幕
         - date: 需要获取的日期, 如`2017-01-21`
@@ -74,7 +74,7 @@ def getHistoricalDanMaKu(date: str, cid: int) -> list[tuple]:
         'oid': cid,  # cid  1176840
         'date': date # 弹幕日期
     }
-    resp = requests.get(url, params, cookies=ReqDataSingleton.getAnyOneCookies(), headers=ReqDataSingleton().UserAgent)
+    resp = requests.get(url, params, cookies=ReqDataSingleton().getAnyOneCookies(), headers=ReqDataSingleton().UserAgent, timeout=10)
     data = resp.content
 
     """
@@ -87,17 +87,32 @@ def getBasDanMaKu(cid: int) -> list[tuple]:
     获取BAS弹幕转包
     """
     url = f'https://api.bilibili.com/x/v2/dm/web/view?type=1&oid={cid}'
-    data = requests.get(url, cookies=ReqDataSingleton.getAnyOneCookies(), headers=ReqDataSingleton().UserAgent)
+    print(ReqDataSingleton().getAnyOneCookies(), "=>", ReqDataSingleton().UserAgent)
+    data = requests.get(url, cookies=ReqDataSingleton().getAnyOneCookies(), headers=ReqDataSingleton().UserAgent, timeout=10)
     target = BasDanmaku.DmWebViewReply()
     target.ParseFromString(data.content)
     res = []
     print(f'特殊弹幕包数={len(target.specialDms)}')
     for i_url in target.specialDms:
         # 使用普通分段包弹幕的proto结构体反序列化此bin数据
+        print(i_url)
         res.extend(
-            DeserializeNormalSegmentedPacketDanMaKu(requests.get(i_url).content, cookies=ReqDataSingleton.getAnyOneCookies(), headers=ReqDataSingleton().UserAgent)
+            DeserializeNormalSegmentedPacketDanMaKu(
+                requests.get(
+                    i_url, 
+                    cookies=ReqDataSingleton().getAnyOneCookies(),
+                    headers=ReqDataSingleton().UserAgent,
+                    timeout=10
+                ).content
+            )
         )
     return res
+
+# 测试
+# def dmTest():
+#     with open("C:\\Users\\Heng_Xin\\Downloads\\dm.bin", "rb") as f:
+#         data = f.read()
+#     return DeserializeNormalSegmentedPacketDanMaKu(data)
 
 """
 废弃!
@@ -115,4 +130,4 @@ def 查询某月份有历史弹幕的天数列表(dateMonth: str):
 """
 
 if __name__ == '__main__':
-    getBasDanMaKu(1)
+    getBasDanMaKu(1176840)

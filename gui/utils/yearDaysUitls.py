@@ -145,9 +145,13 @@ class YearFamily:
 
     def next(self):
         """获取下一个日期"""
-        res = self.getDateFromAllIndex(self.nowAllIndex)
-        self.nowAllIndex += 1
-        return res
+        while True:
+            arrIndex = self._indexToArrIndex(self.nowAllIndex)
+            if self.year_days_list[arrIndex[0]].days[arrIndex[1]] == '0':
+                res = self.getDateFromAllIndex(self.nowAllIndex)
+                self.nowAllIndex += 1
+                return res
+            self.nowAllIndex += 1
 
     def toJsonDict(self) -> dict:
         """将年份族管理类序列化为 JSON Dict"""
@@ -164,7 +168,7 @@ class YearFamily:
             year_days = YearDays(entry['year'])
             year_days.fromString(entry['days'])
             instance.year_days_list[entry['year'] - instance.year_days_list[0].year] = year_days
-        instance.now_all_index = data.get('nowAllIndex', -1)  # 恢复索引状态
+        instance.nowAllIndex = data.get('nowAllIndex', -1)  # 恢复索引状态
         return instance
 
 if __name__ == '__main__':

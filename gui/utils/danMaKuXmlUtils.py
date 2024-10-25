@@ -18,6 +18,9 @@ class DanMaKuXmlUtils:
         except:
             return False
     
+    def remove(fileName:str):
+        os.remove(os.path.join(outputDir, fileName))
+
     def writeDmToXml(fileName:str, xmlDmList: list):
         """
         写入列表内容到文件

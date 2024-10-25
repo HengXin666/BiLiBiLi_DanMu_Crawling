@@ -177,11 +177,18 @@ class VideoScraperUI:
         self.thread.start()
 
     def toggleScrape(self):
+        """
+        重新开始爬取
+        """
         if not self.running: # 开始爬取            
             if ReqDataSingleton().yearList != None and not messagebox.askyesno("注意: 真的要重新开始爬取吗?", "点击[开始爬取]是重新爬取;\n会清空之前的记录, 请做好备份!\n(继续爬取的按钮在旁边)"):
                 self.addLog("您取消了重新爬取", "red")
                 return
+            DanMaKuXmlUtils.remove(ReqDataSingleton().outFile)
             self.running = True
+            self.dmIdCnt = set() # 弹幕id哈希, 防止重复
+            self.allDmCnt = 0    # 当前已经爬取的弹幕数量
+            self.seniorDmCnt = 0 # 当前高级弹幕数量
             self.addLog("开始重新爬取...", "green")
             ReqDataSingleton().yearList = YearFamily(2009, int(time.strftime("%Y", time.localtime()))) if ReqDataSingleton().isGetAllDanmMaKu else YearFamily(ReqDataSingleton().startDate, ReqDataSingleton().endDate)
             self._startThread()
@@ -210,6 +217,39 @@ class VideoScraperUI:
             pass
         self.master.after(1000, self.updateReq)
 
+    def getBasDanMaKu(self) -> None:
+        """
+        爬取Bas弹幕专包, 并且保存
+        """
+        if self.isThreadExit:
+            raise ValueError("程序已退出")
+        try:
+            dmList = getBasDanMaKu(ReqDataSingleton().cid)
+            writeXmlDm = []
+            nowAdd = 0
+            for it in dmList:
+                if it[7] not in self.dmIdCnt:
+                    self.dmIdCnt.add(it[7])
+                    # 写入弹幕
+                    writeXmlDm.append(
+                        f'<d p="{it[0]},{it[1]},{it[2]},{it[3]},{it[4]},{it[5]},{it[6]},{it[7]}">{it[8]}</d>\n'
+                    )
+                    nowAdd += 1
+            self.allDmCnt += nowAdd
+            self.queue.put(f"爬取 Bas弹幕专包 获取 {len(dmList)} 条弹幕")
+            self.queue.put(writeXmlDm)
+        except:
+            self.queue.put("爬取 Bas弹幕专包 出错!")
+        finally:
+            # 随机暂停
+            sleepTime = random.uniform(8, 15)
+            for _ in range(int(sleepTime)):
+                time.sleep(1)
+                if self.isThreadExit:
+                    raise ValueError("程序已退出")
+            time.sleep(sleepTime - int(sleepTime))
+
+
     def getDanMaKu(self, date: str) -> bool:
         """
         爬取弹幕, 并且保存
@@ -222,23 +262,22 @@ class VideoScraperUI:
             seniorDmCnt = 0
             nowAdd = 0
             for it in dmList:
-                if it[7] not in self.dmIdCnt:
-                    self.dmIdCnt.add(it[7])
+                if int(it[7]) not in self.dmIdCnt:
+                    self.dmIdCnt.add(int(it[7]))
                     # 写入弹幕
                     writeXmlDm.append(
                         f'<d p="{it[0]},{it[1]},{it[2]},{it[3]},{it[4]},{it[5]},{it[6]},{it[7]}">{it[8]}</d>\n'
                     )
-                    if it[1] == 7:
+                    if int(it[1]) == 7:
                         seniorDmCnt += 1
                     nowAdd += 1
             self.allDmCnt += nowAdd
             self.seniorDmCnt += seniorDmCnt
-            print(dmList)
             self.queue.put(f"爬取 {date} 获取 {len(dmList)} 条弹幕; 新增 {nowAdd} 条弹幕, 高级弹幕新增 {seniorDmCnt} 条.")
             self.queue.put(writeXmlDm)
-            return True
+            return len(writeXmlDm) > 0
         except:
-            print(date, "没有弹幕")
+            self.queue.put(f"爬取 {date} 出错: 没有弹幕")
             return False
         finally:
             # 随机暂停
@@ -261,23 +300,32 @@ class VideoScraperUI:
             # 并且加入 hash
             res = DanMaKuXmlUtils.readLastNLines(ReqDataSingleton().outFile, lineLen)
             reDmMid = re.compile('<d p="\\d+\\.\\d+,\\d,\\d+,\\d+,\\d+,\\d,[A-Za-z0-9]+,(\\d+)">.*?</d>') # 弹幕id
+            self.queue.put("正在将上一次的爬取记录添加到去重哈希表...")
             for it in res:
                 item = re.findall(reDmMid, it.decode("utf-8"))[0]
                 item = int(item)
                 if item not in self.dmIdCnt:
                     self.dmIdCnt.add(item)
+        else:
+            # 爬取Bas弹幕专包
+            self.queue.put("开始爬取 Bas弹幕专包...")
+            self.getBasDanMaKu()
 
         try:
             if ReqDataSingleton().yearList.nowAllIndex == -1:
                 if ReqDataSingleton().isGetAllDanmMaKu: # 二分爬取全弹幕
+                    self.queue.put("开始二分爬取, 请勿退出!!!")
                     ReqDataSingleton().yearList.findBoundary(self.getDanMaKu)
+                    self.save()
+                    self.queue.put("二分爬取结束, 状态已记录..")
                 else:
                     ReqDataSingleton().yearList.nowAllIndex = 0
             
+            self.queue.put("开始顺序爬取")
             while self.running:
                 date = ReqDataSingleton().yearList.next()
                 self.getDanMaKu(date)
-                if date == ReqDataSingleton().endDate(): # 爬取完毕
+                if date == ReqDataSingleton().endDate: # 爬取完毕
                     self.running = False
                     self.queue.put(f'爬取 cid: {ReqDataSingleton().cid} 完成!')
                     break
