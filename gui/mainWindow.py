@@ -9,6 +9,7 @@ import webbrowser
 from tkinter import messagebox, font, simpledialog
 
 from .getCidWindow import VideoInfoApp
+from .fileProcessorWindow import FileProcessorApp 
 from .api.reqDataSingleton import ReqDataSingleton
 from .api.danMaKuApi import getHistoricalDanMaKu, getBasDanMaKu
 from .credentialManager import CredentialManager
@@ -19,7 +20,7 @@ from . import tkcalendar
 class VideoScraperUI:
     def __init__(self, master):
         self.master = master
-        self.master.title("弹幕爬取工具 V1.0.5 By Heng_Xin")
+        self.master.title("弹幕爬取工具 V1.1.1 By Heng_Xin")
 
         self.isGetAllDanmMaKu = tk.BooleanVar(value=ReqDataSingleton().isGetAllDanmMaKu)
         self.isGetToNowTime = tk.BooleanVar(value=ReqDataSingleton().isGetToNowTime)
@@ -97,6 +98,7 @@ class VideoScraperUI:
         self.settings_menu.add_command(label="关闭日志滚动", command=self.setLogGoToEnd)
         self.menu_bar.add_cascade(label="设置", menu=self.settings_menu)
         self.menu_bar.add_command(label="配置凭证", command=self.setCookies)
+        self.menu_bar.add_command(label="弹幕文件操作", command=self.fileProcessor)
         self.menu_bar.add_command(label="关于", command=self.showAbout)
         master.config(menu=self.menu_bar)
 
@@ -121,6 +123,11 @@ class VideoScraperUI:
         self.isWifiNotGood = False # 是否处于网络错误状态
 
         self.updateReq() # 启动一个事件循环
+
+    def fileProcessor(self):
+        child_window = tk.Toplevel()
+        FileProcessorApp(child_window)
+        child_window.mainloop()
 
     def setLogGoToEnd(self):
         if self.isLogGoToEnd:
@@ -450,7 +457,7 @@ class VideoScraperUI:
         about_window.geometry("600x240")
 
         # 添加信息标签
-        tk.Label(about_window, text="弹幕爬取工具 V1.0.5", font=("黑体", 14)).pack(pady=10)
+        tk.Label(about_window, text="弹幕爬取工具 V1.1.1", font=("黑体", 14)).pack(pady=10)
 
         # 作者
         tk.Label(about_window, text="作者: Heng_Xin", font=("黑体", 14), fg="#990099").pack(pady=10)
@@ -460,7 +467,7 @@ class VideoScraperUI:
         link.pack()
         link.bind("<Button-1>", lambda e: webbrowser.open_new("https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling"))  # 替换为你的链接
 
-        tk.Label(about_window, text="当前版本更新时间: 2024-10-25", font=("黑体", 14)).pack(pady=10)
+        tk.Label(about_window, text="当前版本更新时间: 2024-10-27", font=("黑体", 14)).pack(pady=10)
 
         # 添加关闭按钮
         close_button = tk.Label(about_window, text="关闭", fg="red", cursor="hand2", font=("黑体", 14))

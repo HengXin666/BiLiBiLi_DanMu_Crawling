@@ -29,11 +29,15 @@
 
 - 始终爬取到当天: 可能爬取很久, 可能已经到了新的一天了; 因此爬取弹幕也可以设置爬取新的一天的; 而不是定死在了开始爬取的那一天.
 
+- 可以对弹幕文件进行去重/合并
+
 ## 界面展示
 
 ![主界面](dev/Clip_2024-10-25_13-34-13.png)
 
 ![分界面](dev/Clip_2024-10-25_13-36-41.png)
+
+![弹幕处理](dev/Clip_2024-10-27_15-05-10.png)
 
 ### 使用
 
@@ -99,3 +103,7 @@ pip install requests protobuf
 [![Stargazers repo roster for @HengXin666/BiLiBiLi_DanMu_Crawling](https://reporoster.com/stars/HengXin666/BiLiBiLi_DanMu_Crawling)](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/stargazers)
 
 [![Forkers repo roster for @HengXin666/BiLiBiLi_DanMu_Crawling](https://reporoster.com/forks/HengXin666/BiLiBiLi_DanMu_Crawling)](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/network/members)
+
+## 更新日志
+
+- [2024-10-27 15:06:19] [V1.1.1] 新增简单的弹幕文件操作, 支持去重和合并.
