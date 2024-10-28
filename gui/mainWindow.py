@@ -20,7 +20,7 @@ from . import tkcalendar
 class VideoScraperUI:
     def __init__(self, master):
         self.master = master
-        self.master.title("弹幕爬取工具 V1.1.3 By Heng_Xin")
+        self.master.title("弹幕爬取工具 V1.1.4 By Heng_Xin")
 
         self.isGetAllDanmMaKu = tk.BooleanVar(value=ReqDataSingleton().isGetAllDanmMaKu)
         self.isGetToNowTime = tk.BooleanVar(value=ReqDataSingleton().isGetToNowTime)
@@ -187,8 +187,6 @@ class VideoScraperUI:
         if self.running:
             self.scrape_button.config(text="终止爬取")
             self.continue_button.config(text='暂停爬取')
-            if ReqDataSingleton().isGetToNowTime:
-                self.endDate = time.strftime("%Y-%m-%d", time.localtime())
         else:
             self.isThreadExit = True # 终止子线程
             self.scrape_button.config(text="开始爬取")
@@ -230,7 +228,11 @@ class VideoScraperUI:
             self.allDmCnt = 0    # 当前已经爬取的弹幕数量
             self.seniorDmCnt = 0 # 当前高级弹幕数量
             self.addLog("开始重新爬取...", "green")
-            ReqDataSingleton().yearList = YearFamily(2009, int(time.strftime("%Y", time.localtime()))) if ReqDataSingleton().isGetAllDanmMaKu else YearFamily(ReqDataSingleton().startDate, ReqDataSingleton().endDate)
+            if ReqDataSingleton().isGetAllDanmMaKu:
+                ReqDataSingleton().yearList = YearFamily(2009, int(time.strftime("%Y", time.localtime())))
+            else:
+                ReqDataSingleton().yearList = YearFamily(ReqDataSingleton().startDate, ReqDataSingleton().endDate)
+                ReqDataSingleton().yearList.setNowAllIndexFromDate(ReqDataSingleton().startDate)
             self._startThread()
         else:
             if messagebox.askyesno("确认", "确定要终止爬取吗?"):
@@ -384,6 +386,7 @@ class VideoScraperUI:
             while self.running:
                 date = ReqDataSingleton().yearList.next()
                 self.getDanMaKu(date)
+                self.save()
                 if date == ReqDataSingleton().endDate: # 爬取完毕
                     self.isThreadExit = True
                     self.queue.put(f'爬取 cid: {ReqDataSingleton().cid} 完成!')
@@ -462,7 +465,7 @@ class VideoScraperUI:
         about_window.geometry("600x240")
 
         # 添加信息标签
-        tk.Label(about_window, text="弹幕爬取工具 V1.1.3", font=("黑体", 14)).pack(pady=10)
+        tk.Label(about_window, text="弹幕爬取工具 V1.1.4", font=("黑体", 14)).pack(pady=10)
 
         # 作者
         tk.Label(about_window, text="作者: Heng_Xin", font=("黑体", 14), fg="#990099").pack(pady=10)
@@ -511,8 +514,14 @@ class VideoScraperUI:
             self.updateTheme()
     
     def save(self):
+        """
+        保存
+        """
         ReqDataSingleton().startDate = self.dateObj.start_date.get()
-        ReqDataSingleton().endDate = self.dateObj.end_date.get()
+        if ReqDataSingleton().isGetToNowTime:
+                self.endDate = time.strftime("%Y-%m-%d", time.localtime())
+        else:
+            ReqDataSingleton().endDate = self.dateObj.end_date.get()
         ReqDataSingleton().save() # 保存
 
 def start() -> None:

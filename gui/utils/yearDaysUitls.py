@@ -93,19 +93,19 @@ class YearDays:
 
 class YearFamily:
     def __init__(self, start_year, end_year):
-        self.year_days_list = [YearDays(year) for year in range(start_year, end_year + 1)]
+        self.yearDaysList = [YearDays(year) for year in range(start_year, end_year + 1)]
         self.nowAllIndex = -1
 
     def _indexToArrIndex(self, index: int) -> tuple[int, int]:
         """从ALLIndex转为 Arr Index, 即 year_days_list[res[0]][res[1]]"""
-        for i in range(len(self.year_days_list)):
-            if index >= len(self.year_days_list[i]):
-                index -= len(self.year_days_list[i])
+        for i in range(len(self.yearDaysList)):
+            if index >= len(self.yearDaysList[i]):
+                index -= len(self.yearDaysList[i])
             else:
                 return (i, index)
         return (
-            len(self.year_days_list) - 1, 
-            len(self.year_days_list[len(self.year_days_list) - 1]) - 1
+            len(self.yearDaysList) - 1, 
+            len(self.yearDaysList[len(self.yearDaysList) - 1]) - 1
         )
 
     def findBoundary(self, callback):
@@ -115,41 +115,47 @@ class YearFamily:
         `callback`判断函数, 传参是日期(`2024-10-24`)
         """
         low = 0
-        high = sum(366 if yd._is_leap_year(yd.year) else 365 for yd in self.year_days_list) - 1
+        high = sum(366 if yd._is_leap_year(yd.year) else 365 for yd in self.yearDaysList) - 1
 
         while low < high:
             mid = (low + high) // 2
             date = self.getDateFromAllIndex(mid)
             arrIndex = self._indexToArrIndex(mid)
             # 如果之前有标记, 就按照标记来
-            if self.year_days_list[arrIndex[0]].days[arrIndex[1]] != '0':
-                if self.year_days_list[arrIndex[0]].days[arrIndex[1]] == '1':
+            if self.yearDaysList[arrIndex[0]].days[arrIndex[1]] != '0':
+                if self.yearDaysList[arrIndex[0]].days[arrIndex[1]] == '1':
                     high = mid
                 else:
                     low = mid + 1
             else:
                 # 标记查找过的日期
                 if callback(date):
-                    self.year_days_list[arrIndex[0]].days[arrIndex[1]] = '1'  # 资源存在
+                    self.yearDaysList[arrIndex[0]].days[arrIndex[1]] = '1'  # 资源存在
                     high = mid  # 向左查找
                 else:
-                    self.year_days_list[arrIndex[0]].days[arrIndex[1]] = '6'  # 资源不存在
+                    self.yearDaysList[arrIndex[0]].days[arrIndex[1]] = '6'  # 资源不存在
                     low = mid + 1  # 向右查找
 
         self.nowAllIndex = low
 
+    def setNowAllIndexFromDate(self, dateStr: str):
+        """从日期对`nowAllIndex`赋值"""
+        if self.yearDaysList[0].year <= int(dateStr[:4]) <= self.yearDaysList[-1].year:
+            date = datetime.strptime(dateStr, '%Y-%m-%d')
+            self.nowAllIndex = (date - datetime(self.yearDaysList[0].year, 1, 1)).days
+
     def getDateFromAllIndex(self, index) -> str:
         """从ALL索引获取日期"""
         idx = self._indexToArrIndex(index)
-        return self.year_days_list[idx[0]].getDateByIndex(idx[1])
+        return self.yearDaysList[idx[0]].getDateByIndex(idx[1])
 
     def next(self):
         """获取下一个日期"""
         while True:
             arrIndex = self._indexToArrIndex(self.nowAllIndex)
-            if self.year_days_list[arrIndex[0]].days[arrIndex[1]] == '0':
+            if self.yearDaysList[arrIndex[0]].days[arrIndex[1]] == '0':
                 res = self.getDateFromAllIndex(self.nowAllIndex)
-                self.year_days_list[arrIndex[0]].days[arrIndex[1]] = '1'
+                self.yearDaysList[arrIndex[0]].days[arrIndex[1]] = '1'
                 self.nowAllIndex += 1
                 return res
             self.nowAllIndex += 1
@@ -158,13 +164,13 @@ class YearFamily:
         """回退到上一个日期, 并且清除当前日期的操作"""
         self.nowAllIndex -= 1
         arrIndex = self._indexToArrIndex(self.nowAllIndex)
-        self.year_days_list[arrIndex[0]].days[arrIndex[1]] = '0'
+        self.yearDaysList[arrIndex[0]].days[arrIndex[1]] = '0'
 
 
     def toJsonDict(self) -> dict:
         """将年份族管理类序列化为 JSON Dict"""
         return {
-            'list': [{"year": yd.year, "days": yd.toString()} for yd in self.year_days_list],
+            'list': [{"year": yd.year, "days": yd.toString()} for yd in self.yearDaysList],
             'nowAllIndex': self.nowAllIndex # 开始爬取日期, -1 代表需要从二分开始
         }
 
@@ -175,21 +181,21 @@ class YearFamily:
         for entry in data['list']:
             year_days = YearDays(entry['year'])
             year_days.fromString(entry['days'])
-            instance.year_days_list[entry['year'] - instance.year_days_list[0].year] = year_days
+            instance.yearDaysList[entry['year'] - instance.yearDaysList[0].year] = year_days
         instance.nowAllIndex = data.get('nowAllIndex', -1)  # 恢复索引状态
         return instance
 
 if __name__ == '__main__':
     # 示例使用
     year_family = YearFamily(2020, 2024)
-    year_family.year_days_list[0][0] = '1'  # 2020-01-01
-    year_family.year_days_list[1][0] = '1'  # 2021-01-01
-    year_family.year_days_list[2][1] = '1'  # 2022-01-02
-    year_family.year_days_list[3][364] = '1'  # 2023-12-30
-    year_family.year_days_list[4][364] = '1'  # 2024-12-30
+    year_family.yearDaysList[0][0] = '1'  # 2020-01-01
+    year_family.yearDaysList[1][0] = '1'  # 2021-01-01
+    year_family.yearDaysList[2][1] = '1'  # 2022-01-02
+    year_family.yearDaysList[3][364] = '1'  # 2023-12-30
+    year_family.yearDaysList[4][364] = '1'  # 2024-12-30
 
     idx = year_family._indexToArrIndex(356)
-    print(idx, "->", year_family.year_days_list[idx[0]].getDateByIndex(idx[1]))
+    print(idx, "->", year_family.yearDaysList[idx[0]].getDateByIndex(idx[1]))
 
     # funX 示例调用
     def example_funX(date_str):
