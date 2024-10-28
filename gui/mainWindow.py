@@ -20,7 +20,7 @@ from . import tkcalendar
 class VideoScraperUI:
     def __init__(self, master):
         self.master = master
-        self.master.title("弹幕爬取工具 V1.1.1 By Heng_Xin")
+        self.master.title("弹幕爬取工具 V1.1.2 By Heng_Xin")
 
         self.isGetAllDanmMaKu = tk.BooleanVar(value=ReqDataSingleton().isGetAllDanmMaKu)
         self.isGetToNowTime = tk.BooleanVar(value=ReqDataSingleton().isGetToNowTime)
@@ -220,7 +220,11 @@ class VideoScraperUI:
             if ReqDataSingleton().yearList != None and not messagebox.askyesno("注意: 真的要重新开始爬取吗?", "点击[开始爬取]是重新爬取;\n会清空之前的记录, 请做好备份!\n(继续爬取的按钮在旁边)"):
                 self.addLog("您取消了重新爬取", "red")
                 return
-            DanMaKuXmlUtils.remove(ReqDataSingleton().outFile)
+            try:
+                # 如果之前有文件, 就删除一下
+                DanMaKuXmlUtils.remove(ReqDataSingleton().outFile)
+            except:
+                pass
             self.running = True
             self.dmIdCnt = set() # 弹幕id哈希, 防止重复
             self.allDmCnt = 0    # 当前已经爬取的弹幕数量
@@ -457,7 +461,7 @@ class VideoScraperUI:
         about_window.geometry("600x240")
 
         # 添加信息标签
-        tk.Label(about_window, text="弹幕爬取工具 V1.1.1", font=("黑体", 14)).pack(pady=10)
+        tk.Label(about_window, text="弹幕爬取工具 V1.1.2", font=("黑体", 14)).pack(pady=10)
 
         # 作者
         tk.Label(about_window, text="作者: Heng_Xin", font=("黑体", 14), fg="#990099").pack(pady=10)
@@ -467,7 +471,7 @@ class VideoScraperUI:
         link.pack()
         link.bind("<Button-1>", lambda e: webbrowser.open_new("https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling"))  # 替换为你的链接
 
-        tk.Label(about_window, text="当前版本更新时间: 2024-10-27", font=("黑体", 14)).pack(pady=10)
+        tk.Label(about_window, text="当前版本更新时间: 2024-10-28", font=("黑体", 14)).pack(pady=10)
 
         # 添加关闭按钮
         close_button = tk.Label(about_window, text="关闭", fg="red", cursor="hand2", font=("黑体", 14))
