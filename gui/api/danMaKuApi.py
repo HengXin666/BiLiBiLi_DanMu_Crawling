@@ -87,7 +87,6 @@ def getBasDanMaKu(cid: int) -> list[tuple]:
     获取BAS弹幕转包
     """
     url = f'https://api.bilibili.com/x/v2/dm/web/view?type=1&oid={cid}'
-    print(ReqDataSingleton().getAnyOneCookies(), "=>", ReqDataSingleton().UserAgent)
     data = requests.get(url, cookies=ReqDataSingleton().getAnyOneCookies(), headers=ReqDataSingleton().UserAgent, timeout=10)
     target = BasDanmaku.DmWebViewReply()
     target.ParseFromString(data.content)

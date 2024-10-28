@@ -20,7 +20,7 @@ from . import tkcalendar
 class VideoScraperUI:
     def __init__(self, master):
         self.master = master
-        self.master.title("弹幕爬取工具 V1.1.2 By Heng_Xin")
+        self.master.title("弹幕爬取工具 V1.1.3 By Heng_Xin")
 
         self.isGetAllDanmMaKu = tk.BooleanVar(value=ReqDataSingleton().isGetAllDanmMaKu)
         self.isGetToNowTime = tk.BooleanVar(value=ReqDataSingleton().isGetToNowTime)
@@ -279,6 +279,7 @@ class VideoScraperUI:
                 self.allDmCnt += nowAdd
                 self.queue.put(f"爬取 Bas弹幕专包 获取 {len(dmList)} 条弹幕")
                 self.queue.put(writeXmlDm)
+                return
             except:
                 cs += 1
                 self.queue.put(f"爬取 Bas弹幕专包 出错: 网络错误, 可能被封禁了!, 正在重试: {cs}/5 次")
@@ -461,7 +462,7 @@ class VideoScraperUI:
         about_window.geometry("600x240")
 
         # 添加信息标签
-        tk.Label(about_window, text="弹幕爬取工具 V1.1.2", font=("黑体", 14)).pack(pady=10)
+        tk.Label(about_window, text="弹幕爬取工具 V1.1.3", font=("黑体", 14)).pack(pady=10)
 
         # 作者
         tk.Label(about_window, text="作者: Heng_Xin", font=("黑体", 14), fg="#990099").pack(pady=10)
