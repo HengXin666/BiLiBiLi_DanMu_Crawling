@@ -59,7 +59,8 @@ class ReqDataSingleton:
             self.yearList = yearDaysUitls.YearFamily.fromJson(data.get('run', {}).get('yearFamily', {}))
         self.outFile = data.get('run', {}).get('outFile', "danmaku.xml")
 
-        print(self.get_members())
+        if self.isGetToNowTime:
+            self.endDate = time.strftime("%Y-%m-%d", time.localtime())
 
     def get_members(self):
         # 返回类的所有成员作为字典
