@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import requests
-import google.protobuf.text_format as text_format
+# import google.protobuf.text_format as text_format
 from .pb import dm_pb2 as Danmaku
 from .pb import basDm_pb2 as BasDanmaku
 from .reqDataSingleton import ReqDataSingleton

@@ -120,7 +120,7 @@ class FileProcessorApp:
                         resList.append(dm)
             print(filePath, "处理完成!")
 
-        with open(os.path.join(self.output_path, f"HX-{datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S")}.xml"), "w", encoding="utf-8") as f:
+        with open(os.path.join(self.output_path, f"HX-{datetime.datetime.now().strftime('%Y-%m-%d_%H%M%S')}.xml"), "w", encoding="utf-8") as f:
             f.writelines(f'<?xml version="1.0" encoding="UTF-8"?><i><chatserver>chat.bilibili.com</chatserver><chatid>{dmCid}</chatid><mission>0</mission><maxlimit>3000</maxlimit><state>0</state><real_name>0</real_name><source>k-v</source>\n')
             for i in resList:
                 f.writelines(i + "\n")
