@@ -20,7 +20,7 @@ from . import tkcalendar
 class VideoScraperUI:
     def __init__(self, master):
         self.master = master
-        self.master.title("弹幕爬取工具 V1.1.6 By Heng_Xin")
+        self.master.title("弹幕爬取工具 V1.1.7 By Heng_Xin")
 
         self.isGetAllDanmMaKu = tk.BooleanVar(value=ReqDataSingleton().isGetAllDanmMaKu)
         self.isGetToNowTime = tk.BooleanVar(value=ReqDataSingleton().isGetToNowTime)
@@ -231,7 +231,10 @@ class VideoScraperUI:
             if ReqDataSingleton().isGetAllDanmMaKu:
                 ReqDataSingleton().yearList = YearFamily(2009, int(time.strftime("%Y", time.localtime())))
             else:
-                ReqDataSingleton().yearList = YearFamily(ReqDataSingleton().startDate, ReqDataSingleton().endDate)
+                ReqDataSingleton().yearList = YearFamily(
+                    datetime.datetime.strptime(ReqDataSingleton().startDate, '%Y-%m-%d').year,
+                    datetime.datetime.strptime(ReqDataSingleton().endDate, '%Y-%m-%d').year
+                )
                 ReqDataSingleton().yearList.setNowAllIndexFromDate(ReqDataSingleton().startDate)
             self._startThread()
         else:
@@ -387,7 +390,7 @@ class VideoScraperUI:
                 date = ReqDataSingleton().yearList.next()
                 self.getDanMaKu(date)
                 self.save()
-                if date == ReqDataSingleton().endDate: # 爬取完毕
+                if datetime.datetime.strptime(date, '%Y-%m-%d') >= datetime.datetime.strptime(ReqDataSingleton().endDate, '%Y-%m-%d'): # 爬取完毕
                     self.isThreadExit = True
                     self.queue.put(f'爬取 cid: {ReqDataSingleton().cid} 完成!')
                     break
@@ -465,7 +468,7 @@ class VideoScraperUI:
         about_window.geometry("600x240")
 
         # 添加信息标签
-        tk.Label(about_window, text="弹幕爬取工具 V1.1.6", font=("黑体", 14)).pack(pady=10)
+        tk.Label(about_window, text="弹幕爬取工具 V1.1.7", font=("黑体", 14)).pack(pady=10)
 
         # 作者
         tk.Label(about_window, text="作者: Heng_Xin", font=("黑体", 14), fg="#990099").pack(pady=10)
@@ -475,7 +478,7 @@ class VideoScraperUI:
         link.pack()
         link.bind("<Button-1>", lambda e: webbrowser.open_new("https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling"))  # 替换为你的链接
 
-        tk.Label(about_window, text="当前版本更新时间: 2024-11-2", font=("黑体", 14)).pack(pady=10)
+        tk.Label(about_window, text="当前版本更新时间: 2024-11-15", font=("黑体", 14)).pack(pady=10)
 
         # 添加关闭按钮
         close_button = tk.Label(about_window, text="关闭", fg="red", cursor="hand2", font=("黑体", 14))
