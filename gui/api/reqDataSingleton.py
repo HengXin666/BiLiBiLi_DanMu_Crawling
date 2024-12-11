@@ -35,7 +35,7 @@ class ReqDataSingleton:
         self.cid = -1
         self.startDate = '2009-06-26' # 爬取的起始日期
         self.endDate = time.strftime("%Y-%m-%d", time.localtime()) # 终止日期
-        self.isGetAllDanmMaKu = True
+        self.isGetAllDanMaKu = True
         self.isGetToNowTime = True
 
         ### 爬取间隔时间 [timerMin, timerMax] ###
@@ -51,7 +51,7 @@ class ReqDataSingleton:
         self.cid = data.get('settings', {}).get('cid', -1)
         self.startDate = data.get('settings', {}).get('startDate', '2009-06-26')  # 爬取的起始日期
         self.endDate = data.get('settings', {}).get('endDate', time.strftime("%Y-%m-%d", time.localtime()))  # 终止日期
-        self.isGetAllDanmMaKu = bool(data.get('settings', {}).get('isGetAllDanmMaKu', True))
+        self.isGetAllDanMaKu = bool(data.get('settings', {}).get('isGetAllDanmMaKu', True))
         self.isGetToNowTime = bool(data.get('settings', {}).get('isGetToNowTime', True))
         
         self.yearList = None # yearDaysUitls.YearFamily(2009, int(time.strftime("%Y", time.localtime())))
@@ -73,7 +73,7 @@ class ReqDataSingleton:
                 'cid': self.cid,
                 'startDate': self.startDate,
                 'endDate': self.endDate,
-                'isGetAllDanmMaKu': self.isGetAllDanmMaKu, # 获取全弹幕
+                'isGetAllDanmMaKu': self.isGetAllDanMaKu, # 获取全弹幕
                 'isGetToNowTime': self.isGetToNowTime,     # 获取直到当前时间 
             },
             'net': {

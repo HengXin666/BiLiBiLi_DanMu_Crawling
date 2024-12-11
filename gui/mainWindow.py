@@ -20,9 +20,9 @@ from . import tkcalendar
 class VideoScraperUI:
     def __init__(self, master):
         self.master = master
-        self.master.title("弹幕爬取工具 V1.1.7 By Heng_Xin")
+        self.master.title("弹幕爬取工具 V1.1.8 By Heng_Xin")
 
-        self.isGetAllDanmMaKu = tk.BooleanVar(value=ReqDataSingleton().isGetAllDanmMaKu)
+        self.isGetAllDanMaKu = tk.BooleanVar(value=ReqDataSingleton().isGetAllDanMaKu)
         self.isGetToNowTime = tk.BooleanVar(value=ReqDataSingleton().isGetToNowTime)
 
         # 自定义字体
@@ -48,7 +48,7 @@ class VideoScraperUI:
         self.outFileBtn.grid(row=2, column=1, padx=10, pady=10, sticky='ew')
 
         # 复选框
-        self.binary_scrape_check = tk.Checkbutton(master, text="二分爬取全弹幕", variable=self.isGetAllDanmMaKu, font=self.custom_font, command=self.updateIsGetAllDanmMaKu)
+        self.binary_scrape_check = tk.Checkbutton(master, text="二分爬取全弹幕", variable=self.isGetAllDanMaKu, font=self.custom_font, command=self.updateIsGetAllDanmMaKu)
         self.binary_scrape_check.grid(row=3, column=0, padx=10, pady=5, sticky='w')
 
         self.continue_scrape_check = tk.Checkbutton(master, text="始终爬取到当天", variable=self.isGetToNowTime, font=self.custom_font, command=self.updateIsGetToNowTime)
@@ -144,18 +144,17 @@ class VideoScraperUI:
     def setOutFile(self):
         # 弹出输入对话框
         while not self.running:
-            user_input = simpledialog.askstring("输入: [文件名.xml]", "请输入文件名(.xml):")
-            if user_input is None:
-                return
-            if len(user_input) >= 4:
-                ReqDataSingleton().outFile = self.outFileBtn['text'] = user_input
-                return
+            user_input = simpledialog.askstring("输入: 弹幕文件名", "请输入文件名(示例: file -> 输出: file.xml):")
+            if len(user_input) <= 0:
+                continue
+            ReqDataSingleton().outFile = self.outFileBtn['text'] = f"{user_input}.xml"
+            return
 
     def updateIsGetAllDanmMaKu(self):
-        if self.isGetAllDanmMaKu.get():
-            ReqDataSingleton().isGetAllDanmMaKu = True
+        if self.isGetAllDanMaKu.get():
+            ReqDataSingleton().isGetAllDanMaKu = True
         else:
-            ReqDataSingleton().isGetAllDanmMaKu = False
+            ReqDataSingleton().isGetAllDanMaKu = False
 
     def updateIsGetToNowTime(self):
         if self.isGetToNowTime.get():
@@ -212,8 +211,11 @@ class VideoScraperUI:
 
     def toggleScrape(self):
         """
-        重新开始爬取
+        开始爬取
         """
+        if not ReqDataSingleton().isGetAllDanMaKu:
+            ReqDataSingleton().startDate = self.dateObj.start_date.get()
+            ReqDataSingleton().endDate = self.dateObj.end_date.get()
         if not self.running: # 开始爬取            
             if ReqDataSingleton().yearList != None and not messagebox.askyesno("注意: 真的要重新开始爬取吗?", "点击[开始爬取]是重新爬取;\n会清空之前的记录, 请做好备份!\n(继续爬取的按钮在旁边)"):
                 self.addLog("您取消了重新爬取", "red")
@@ -228,7 +230,7 @@ class VideoScraperUI:
             self.allDmCnt = 0    # 当前已经爬取的弹幕数量
             self.seniorDmCnt = 0 # 当前高级弹幕数量
             self.addLog("开始重新爬取...", "green")
-            if ReqDataSingleton().isGetAllDanmMaKu:
+            if ReqDataSingleton().isGetAllDanMaKu:
                 ReqDataSingleton().yearList = YearFamily(2009, int(time.strftime("%Y", time.localtime())))
             else:
                 ReqDataSingleton().yearList = YearFamily(
@@ -366,10 +368,13 @@ class VideoScraperUI:
             reDmMid = re.compile('<d p="\\d+\\.\\d+,\\d,\\d+,\\d+,\\d+,\\d,[A-Za-z0-9]+,(\\d+)">.*?</d>') # 弹幕id
             self.queue.put("正在将上一次的爬取记录添加到去重哈希表...")
             for it in res:
-                item = re.findall(reDmMid, it.decode("utf-8"))[0]
-                item = int(item)
-                if item not in self.dmIdCnt:
-                    self.dmIdCnt.add(item)
+                try:
+                    item = re.findall(reDmMid, it.decode("utf-8"))[0]
+                    item = int(item)
+                    if item not in self.dmIdCnt:
+                        self.dmIdCnt.add(item)
+                except:
+                    pass
         else:
             # 爬取Bas弹幕专包
             self.queue.put("开始爬取 Bas弹幕专包...")
@@ -377,7 +382,7 @@ class VideoScraperUI:
 
         try:
             if ReqDataSingleton().yearList.nowAllIndex == -1:
-                if ReqDataSingleton().isGetAllDanmMaKu: # 二分爬取全弹幕
+                if ReqDataSingleton().isGetAllDanMaKu: # 二分爬取全弹幕
                     self.queue.put("开始二分爬取, 请勿退出!!!")
                     ReqDataSingleton().yearList.findBoundary(self.getDanMaKu)
                     self.save()
@@ -468,7 +473,7 @@ class VideoScraperUI:
         about_window.geometry("600x240")
 
         # 添加信息标签
-        tk.Label(about_window, text="弹幕爬取工具 V1.1.7", font=("黑体", 14)).pack(pady=10)
+        tk.Label(about_window, text="弹幕爬取工具 V1.1.8", font=("黑体", 14)).pack(pady=10)
 
         # 作者
         tk.Label(about_window, text="作者: Heng_Xin", font=("黑体", 14), fg="#990099").pack(pady=10)
@@ -478,7 +483,7 @@ class VideoScraperUI:
         link.pack()
         link.bind("<Button-1>", lambda e: webbrowser.open_new("https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling"))  # 替换为你的链接
 
-        tk.Label(about_window, text="当前版本更新时间: 2024-11-15", font=("黑体", 14)).pack(pady=10)
+        tk.Label(about_window, text="当前版本更新时间: 2024-12-11", font=("黑体", 14)).pack(pady=10)
 
         # 添加关闭按钮
         close_button = tk.Label(about_window, text="关闭", fg="red", cursor="hand2", font=("黑体", 14))

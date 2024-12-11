@@ -318,14 +318,13 @@ class Datepicker:
         self.ent2 = tk.Entry(self.frame, textvariable=self.end_date)
         self.ent2.grid(row=0, column=3)
 
-    def getdate(s, type):  # 获取选择的日期
+    def getdate(self, type):  # 获取选择的日期
         for date in [Calendar().selection()]:
             if date:
-                if type == "start":  # 如果是开始按钮，就赋值给开始日期
-                    s.start_date.set(date)
+                if type == "start":  # 如果是开始按钮, 就赋值给开始日期
+                    self.start_date.set(date)
                 elif type == "end":
-                    s.end_date.set(date)
-
+                    self.end_date.set(date)
 
 # 执行
 if __name__ == "__main__":
