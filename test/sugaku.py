@@ -7,6 +7,7 @@ class DanmakuPool:
     def __init__(self, dm: List[List[int]]):
         self._dm = dm  # 弹幕数据 (测试使用的)
         self.vis = set() # 已经爬取的弹幕
+        self.callCnt = 0
 
     def getDanmaku(self, date: int) -> int:
         """
@@ -14,6 +15,7 @@ class DanmakuPool:
         新增的弹幕数量
         """
         res = 0
+        self.callCnt += 1
         for it in self._dm[date]:
             if it not in self.vis:
                 self.vis.add(it)
@@ -23,6 +25,12 @@ class DanmakuPool:
     def getPoolSize(self) -> int:
         """
         获取弹幕池容量
+        """
+        return len(self._dm[0])
+
+    def getDateLen(self) -> int:
+        """
+        获取需要爬取的日期 [x, n) 的 n
         """
         return len(self._dm)
         
@@ -40,40 +48,64 @@ def reference(dm: List[List[int]]) -> int:
         res |= set(it)
     return len(res)
 
-# 数学模型爬取模块
-def simulate_danmaku_crawl(pool: DanmakuPool) -> tuple[int, int]:
+def cntToR(cnt: int, poolSize: int) -> int:
+    """经验主义的跳步
+
+    Args:
+        cnt (int): 新增的弹幕数
+        poolSize (int): 弹幕池大小
+
+    Returns:
+        int: 应该跳步的步长
     """
-    使用动态调整跳跃策略模拟爬取弹幕。
-    返回爬取函数的调用次数。
+    if cnt >= poolSize * 0.5:
+        return 1
+    elif cnt >= poolSize * 0.3:
+        return 2
+    elif cnt >= poolSize * 0.2:
+        return 3
+    elif cnt >= poolSize * 0.1:
+        return 5
+    # elif cnt >= poolSize * 0.075:
+    #     return 6
+    elif cnt >= poolSize * 0.05:
+        return 7
+    elif cnt >= poolSize * 0.025:
+        return 8
+    elif cnt >= poolSize * 0.001:
+        return 9
+    else: # 你着视频妹人看啊
+        return 10
+
+def simulateDanmakuCrawl(pool: DanmakuPool, w: float = 0.5) -> int:
+    """
+    使用动态调整跳跃和回溯策略模拟爬取弹幕。
+    返回爬取函数的调用次数和去重后的总弹幕数量。
+    :param pool: 弹幕池对象
+    :param w: 回溯控制权重
+    :return: 已去重弹幕
     """
     # 初始化爬取相关变量
-    res = 0
     poolSize = pool.getPoolSize()
-    day = 0
-    jp = 1
-    maeDay = 0
-    while day < poolSize:
-        res += 1
-        getCnt = pool.getDanmaku(day)
-        if getCnt == poolSize:
-            # 必需后退
-            day = maeDay + ((day - maeDay) >> 1)
-            jp >>= 1
-        elif getCnt >= poolSize * 0.8:
-            jp -= int(max(jp, jp * 0.25))
+    day = 0  # 当前访问的日期
+    lastJumpStart = 0  # 上一次跳跃的起始位置
+    jp = 1  # 当前跳跃步长
+    dateLen = pool.getDateLen()
+    while day < dateLen:
+        addCnt = pool.getDanmaku(day)
+        if addCnt == poolSize and lastJumpStart > 0:
+            # 存在可能遗漏的弹幕, 回溯检查
+            print("赌怪!")
+            for j in range(day - 1, lastJumpStart - 1, -1):
+                pool.getDanmaku(j)
+            # 回溯完成后, 将步长减半并重新开始跳跃
+            jp = 1
         else:
-            if getCnt != 0:
-                jp += int((poolSize / getCnt) * 0.5)
-            else:
-                jp += 1
-
-        maeDay = day
-        day = min(day + jp, poolSize - (day != poolSize - 1))
-    
-    return res, len(pool.vis)
-
-from typing import List
-import math
+            jp = cntToR(addCnt, poolSize)
+        # 跳跃到下一天
+        lastJumpStart = day
+        day = min(day + jp, dateLen - (day < dateLen - 1))
+    return len(pool.vis)
 
 def generateDanmakuData(
         poolSize: int, 
@@ -139,15 +171,17 @@ def main():
     date_len = 300
     n = 9 * 10 ** 5 # 100w ?? 3000 * 300=90w
 
-    for i in range(1, 10):
-        print(f"\n当平均新增弹幕率为 {format(i * 0.1, '.2f')} % 时候的情况:")
-        random_danmaku = generateDanmakuData(pool_size, date_len, n, i * 0.1)
+    for i in range(1, 10000, 10):
+        print(f"\n当平均新增弹幕率为 {format(i * 0.01, '.2f')} % 时候的情况:")
+        random_danmaku = generateDanmakuData(pool_size, date_len, n, i * 0.01 * 0.01)
         # print("生成的随机弹幕数据:", random_danmaku)
         honmonoDanmaku = reference(random_danmaku)
         print(f"共有弹幕: {len(random_danmaku) * len(random_danmaku[0])} 条, 真弹幕数为 {honmonoDanmaku} 条 | 占比 {format(honmonoDanmaku / (len(random_danmaku) * len(random_danmaku[0])) * 100, '.2f')} %")
 
         # 调用爬取模拟函数
-        total_calls, addCnt = simulate_danmaku_crawl(DanmakuPool(random_danmaku))
+        danmaku = DanmakuPool(random_danmaku)
+        addCnt = simulateDanmakuCrawl(danmaku)
+        total_calls = danmaku.callCnt
         print(f"爬取函数调用次数: {total_calls} | 爬取率: {format(addCnt / honmonoDanmaku * 100, '.2f')} % {"" if honmonoDanmaku == addCnt else f"剩余 {honmonoDanmaku - addCnt} 条弹幕未爬取"} | 性能提升: {format(date_len / total_calls * 100 - 100, '.2f')} %")
 
 if __name__ == "__main__":
