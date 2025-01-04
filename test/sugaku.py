@@ -1,3 +1,4 @@
+import math
 from typing import List, Set
 import random
 
@@ -67,37 +68,68 @@ def simulate_danmaku_crawl(pool: DanmakuPool) -> tuple[int, int]:
                 jp += 1
 
         maeDay = day
-        day += jp
+        day = min(day + jp, poolSize - (day != poolSize - 1))
     
     return res, len(pool.vis)
 
-def generate_danmaku_data(pool_size: int, date_len: int, n: int, move_weight: float = 0.7) -> List[List[int]]:
+from typing import List
+import math
+
+def generateDanmakuData(
+        poolSize: int, 
+        dateLen: int, 
+        n: int, 
+        moveWeight: float = 0.7
+    ) -> List[List[int]]:
     """
-    生成随机二维弹幕数组，使用滑动窗口思想，确保覆盖整个ID范围。
-    :param pool_size: 每日弹幕数量
-    :param date_len: 天数
-    :param n: 弹幕ID范围 [1, n]
-    :param move_weight: 滑动窗口移动的概率权重
+    生成随机二维弹幕数组, 使用滑动窗口思想, 确保覆盖整个ID范围.
+    :param poolSize: 每日弹幕数量
+    :param dateLen: 天数
+    :param n: 弹幕总数量
+    :param moveWeight: 滑动窗口移动的概率权重
     :return: 二维弹幕数组
     """
-    ids = list(range(1, n + 1))
+    # 初始化所有 ID
+    idx = list(range(1, n + 1))
     res = []
+    
+    # 计算新增和延续的数量
+    new_count = math.ceil(poolSize * moveWeight)
+    old_count = poolSize - new_count
+    
+    # 当前窗口起点
     window_start = 0
-    window_size = pool_size
-    step = max(n // date_len, 1)  # 确保滑动完
-
-    for day in range(date_len):
-        # 确保窗口滑动
-        if random.random() < move_weight and window_start + window_size < n:
-            window_start += min(step, n - window_start - window_size)
-
-        window = ids[window_start : window_start + window_size]
-        res.append(random.sample(window, len(window)))
-
-        # 保证覆盖所有ID范围
-        if window_start + window_size >= n:
-            window_start = max(0, window_start - step)
-
+    
+    for _ in range(dateLen):
+        # 获取新增部分的起点和终点
+        new_start = window_start + old_count
+        new_end = new_start + new_count
+        
+        # 确保新增部分不超出范围
+        if new_start >= n:
+            new_ids = []  # 无法新增更多弹幕
+        else:
+            new_ids = idx[new_start:new_end]
+        
+        # 确保延续部分不超出范围
+        old_ids = idx[window_start:window_start + old_count]
+        
+        # 拼接老部分和新部分
+        current_window = old_ids + new_ids
+        
+        # 如果当前窗口不足 poolSize, 从头部补足
+        if len(current_window) < poolSize:
+            current_window += idx[:poolSize - len(current_window)]
+        
+        # 截取当前窗口
+        res.append(current_window[:poolSize])
+        
+        # 滑动窗口的起点
+        window_start += new_count
+        
+        # 如果窗口超出范围, 停止滑动
+        if window_start >= n:
+            window_start = n - poolSize  # 固定在最后的位置
     return res
 
 # 测试程序
@@ -105,14 +137,14 @@ def main():
     # 生成随机弹幕数据
     pool_size = 3000
     date_len = 300
-    n = 10 ** 5 # 10w
+    n = 9 * 10 ** 5 # 100w ?? 3000 * 300=90w
 
     for i in range(1, 10):
-        print(f"\n当平均新增弹幕率为 {format(0.1 * i, '.2f')} 时候的情况:")
-        random_danmaku = generate_danmaku_data(pool_size, date_len, n, 0.1 * i)
+        print(f"\n当平均新增弹幕率为 {format(i * 0.1, '.2f')} % 时候的情况:")
+        random_danmaku = generateDanmakuData(pool_size, date_len, n, i * 0.1)
         # print("生成的随机弹幕数据:", random_danmaku)
         honmonoDanmaku = reference(random_danmaku)
-        print(f"共有弹幕: {len(random_danmaku) * len(random_danmaku[0])} 条, 真弹幕数为 {honmonoDanmaku} 条")
+        print(f"共有弹幕: {len(random_danmaku) * len(random_danmaku[0])} 条, 真弹幕数为 {honmonoDanmaku} 条 | 占比 {format(honmonoDanmaku / (len(random_danmaku) * len(random_danmaku[0])) * 100, '.2f')} %")
 
         # 调用爬取模拟函数
         total_calls, addCnt = simulate_danmaku_crawl(DanmakuPool(random_danmaku))
