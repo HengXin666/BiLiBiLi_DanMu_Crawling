@@ -13,7 +13,7 @@ from .fileProcessorWindow import FileProcessorApp
 from .api.reqDataSingleton import ReqDataSingleton
 from .api.danMaKuApi import getHistoricalDanMaKu, getBasDanMaKu
 from .credentialManager import CredentialManager
-from .utils.yearDaysUitls import YearFamily
+from .utils.yearDaysUtils import YearFamily
 from .utils.danMaKuXmlUtils import DanMaKuXmlUtils
 from . import tkcalendar
 
@@ -24,6 +24,7 @@ class VideoScraperUI:
 
         self.isGetAllDanMaKu = tk.BooleanVar(value=ReqDataSingleton().isGetAllDanMaKu)
         self.isGetToNowTime = tk.BooleanVar(value=ReqDataSingleton().isGetToNowTime)
+        self.isGetOptimize = tk.BooleanVar(value=ReqDataSingleton().isGetOptimize)
 
         # 自定义字体
         self.custom_font = font.Font(family="黑体", size=14)
@@ -48,18 +49,21 @@ class VideoScraperUI:
         self.outFileBtn.grid(row=2, column=1, padx=10, pady=10, sticky='ew')
 
         # 复选框
-        self.binary_scrape_check = tk.Checkbutton(master, text="二分爬取全弹幕", variable=self.isGetAllDanMaKu, font=self.custom_font, command=self.updateIsGetAllDanmMaKu)
+        self.binary_scrape_check = tk.Checkbutton(master, text="二分爬取全弹幕", variable=self.isGetAllDanMaKu, font=self.custom_font, command=self.updateIsGetAllDanMaKu)
         self.binary_scrape_check.grid(row=3, column=0, padx=10, pady=5, sticky='w')
 
         self.continue_scrape_check = tk.Checkbutton(master, text="始终爬取到当天", variable=self.isGetToNowTime, font=self.custom_font, command=self.updateIsGetToNowTime)
         self.continue_scrape_check.grid(row=3, column=1, padx=10, pady=5, sticky='w')
 
+        self.optimize_scrape_check = tk.Checkbutton(master, text="优化爬取速度", variable=self.isGetOptimize, font=self.custom_font, command=self.updateIsGetOptimize)
+        self.optimize_scrape_check.grid(row=4, column=0, padx=10, pady=5, sticky='w')
+
         # 控制按钮
         self.scrape_button = tk.Button(master, text="开始爬取", command=self.toggleScrape, font=self.custom_font)
-        self.scrape_button.grid(row=4, column=0, padx=10, pady=10, sticky='ew')
+        self.scrape_button.grid(row=5, column=0, padx=10, pady=10, sticky='ew')
 
         self.continue_button = tk.Button(master, text="继续爬取", command=self.continueScrape, font=self.custom_font)
-        self.continue_button.grid(row=4, column=1, padx=10, pady=10, sticky='ew')
+        self.continue_button.grid(row=5, column=1, padx=10, pady=10, sticky='ew')
 
         # 日志框
         self.log_frame = tk.Frame(master)
@@ -150,7 +154,7 @@ class VideoScraperUI:
             ReqDataSingleton().outFile = self.outFileBtn['text'] = f"{user_input}.xml"
             return
 
-    def updateIsGetAllDanmMaKu(self):
+    def updateIsGetAllDanMaKu(self):
         if self.isGetAllDanMaKu.get():
             ReqDataSingleton().isGetAllDanMaKu = True
         else:
@@ -161,6 +165,12 @@ class VideoScraperUI:
             ReqDataSingleton().isGetToNowTime = True
         else:
             ReqDataSingleton().isGetToNowTime = False
+
+    def updateIsGetOptimize(self):
+        if self.isGetOptimize.get():
+            ReqDataSingleton().isGetOptimize = True
+        else:
+            ReqDataSingleton().isGetOptimize = False
 
     def setCid(self, cid: int):
         ReqDataSingleton().cid = cid
@@ -243,7 +253,7 @@ class VideoScraperUI:
             if messagebox.askyesno("确认", "确定要终止爬取吗?"):
                 self.running = False
                 self.addLog("终止爬取", "red")
-                self.save()
+                self.saveConfig()
         self.updateButtonTextByRunning()
     
     def updateReq(self):
@@ -303,36 +313,125 @@ class VideoScraperUI:
                         raise ValueError("程序已退出")
                 time.sleep(sleepTime - int(sleepTime))
 
+    def saveDanMaKu(self, date, dmList) -> int:
+        """保存弹幕
+
+        Args:
+            date (str): 当前爬取的日期
+            dmList (list): 弹幕列表
+
+        Returns:
+            int: 新增弹幕数量
+        """
+        writeXmlDm = []
+        seniorDmCnt = 0
+        nowAdd = 0
+        for it in dmList:
+            if int(it[7]) not in self.dmIdCnt:
+                self.dmIdCnt.add(int(it[7]))
+                # 写入弹幕
+                writeXmlDm.append(
+                    f'<d p="{it[0]},{it[1]},{it[2]},{it[3]},{it[4]},{it[5]},{it[6]},{it[7]}">{it[8]}</d>\n'
+                )
+                if int(it[1]) == 7:
+                    seniorDmCnt += 1
+                nowAdd += 1
+        self.allDmCnt += nowAdd
+        self.seniorDmCnt += seniorDmCnt
+        self.queue.put(f"爬取 {date} 获取 {len(dmList)} 条弹幕; 新增 {nowAdd} 条弹幕, 高级弹幕新增 {seniorDmCnt} 条.")
+        self.queue.put(writeXmlDm)
+        return nowAdd
 
     def getDanMaKu(self, date: str) -> bool:
-        """
-        爬取弹幕, 并且保存
+        """爬取代码并且保存, 返回是否有弹幕
+
+        Args:
+            date (str): 需要爬取的日期
+
+        Raises:
+            ValueError: 程序已退出
+
+        Returns:
+            bool: 是否有弹幕
         """
         cs = 0
         while True:
             if self.isThreadExit:
                 raise ValueError("程序已退出")
-                
             try:
                 dmList = getHistoricalDanMaKu(date, ReqDataSingleton().cid)
-                writeXmlDm = []
-                seniorDmCnt = 0
-                nowAdd = 0
-                for it in dmList:
-                    if int(it[7]) not in self.dmIdCnt:
-                        self.dmIdCnt.add(int(it[7]))
-                        # 写入弹幕
-                        writeXmlDm.append(
-                            f'<d p="{it[0]},{it[1]},{it[2]},{it[3]},{it[4]},{it[5]},{it[6]},{it[7]}">{it[8]}</d>\n'
-                        )
-                        if int(it[1]) == 7:
-                            seniorDmCnt += 1
-                        nowAdd += 1
-                self.allDmCnt += nowAdd
-                self.seniorDmCnt += seniorDmCnt
-                self.queue.put(f"爬取 {date} 获取 {len(dmList)} 条弹幕; 新增 {nowAdd} 条弹幕, 高级弹幕新增 {seniorDmCnt} 条.")
-                self.queue.put(writeXmlDm)
+                self.saveDanMaKu(date, dmList)
                 return len(dmList) > 0
+            except:
+                cs += 1
+                self.queue.put(f"爬取 {date} 出错: 网络错误, 可能被封禁了!, 正在重试: {cs}/5 次")
+                self.isWifiNotGood = True
+                if cs >= 5:
+                    self.isThreadExit = True
+                    self.isWifiNotGood = False
+                    self.queue.put("程序已终止, 请暂停, 以保存状态!")
+                    if ReqDataSingleton().yearList.nowAllIndex != -1:
+                        ReqDataSingleton().yearList.unNext()
+                continue
+            finally:
+                # 随机暂停
+                sleepTime = random.uniform(ReqDataSingleton().timerMin, ReqDataSingleton().timerMax)
+                self.queue.put(f"等待 {sleepTime} 秒...")
+                for _ in range(int(sleepTime)):
+                    time.sleep(1)
+                    if self.isThreadExit:
+                        raise ValueError("程序已退出")
+                time.sleep(sleepTime - int(sleepTime))
+
+    def getDanMaKuPrime(self, date: str) -> int:
+        """获取弹幕, 并且通过算法分析, 返回的是下一个需要爬取的日期相当于date的偏移量
+
+        Args:
+            date (str): 需要爬取的弹幕的日期
+
+        Returns:
+            int: 下一个需要爬取的日期相当于date的偏移量
+        """
+        def addCntToNextCnt(cnt: int, poolSize: int) -> int:
+            """经验主义的跳步
+
+            Args:
+                cnt (int): 新增的弹幕数
+                poolSize (int): 弹幕池大小
+
+            Returns:
+                int: 应该跳步的步长, 如果为 -1 则需要回溯
+            """
+            if cnt >= poolSize * 0.5:
+                return 1
+            elif cnt >= poolSize * 0.3:
+                return 2
+            elif cnt >= poolSize * 0.2:
+                return 3
+            elif cnt >= poolSize * 0.1:
+                return 5
+            # elif cnt >= poolSize * 0.075:
+            #     return 6
+            elif cnt >= poolSize * 0.05:
+                return 7
+            elif cnt >= poolSize * 0.025:
+                return 8
+            elif cnt >= poolSize * 0.001:
+                return 9
+            else: # 你着视频妹人看啊
+                return 10
+        cs = 0
+        while True:
+            if self.isThreadExit:
+                raise ValueError("程序已退出")
+            try:
+                dmList = getHistoricalDanMaKu(date, ReqDataSingleton().cid)
+                poolSize = len(dmList)
+                addCnt = self.saveDanMaKu(date, dmList)
+                if addCnt == poolSize:
+                    self.queue.put(f"爬取 {date} 触发回溯机制!")
+                    return -1
+                return addCntToNextCnt(addCnt, poolSize)
             except:
                 cs += 1
                 self.queue.put(f"爬取 {date} 出错: 网络错误, 可能被封禁了!, 正在重试: {cs}/5 次")
@@ -385,20 +484,46 @@ class VideoScraperUI:
                 if ReqDataSingleton().isGetAllDanMaKu: # 二分爬取全弹幕
                     self.queue.put("开始二分爬取, 请勿退出!!!")
                     ReqDataSingleton().yearList.findBoundary(self.getDanMaKu)
-                    self.save()
+                    self.saveConfig()
                     self.queue.put("二分爬取结束, 状态已记录..")
                 else:
                     ReqDataSingleton().yearList.nowAllIndex = 0
             
             self.queue.put("开始顺序爬取")
-            while self.running:
-                date = ReqDataSingleton().yearList.next()
-                self.getDanMaKu(date)
-                self.save()
-                if datetime.datetime.strptime(date, '%Y-%m-%d') >= datetime.datetime.strptime(ReqDataSingleton().endDate, '%Y-%m-%d'): # 爬取完毕
-                    self.isThreadExit = True
-                    self.queue.put(f'爬取 cid: {ReqDataSingleton().cid} 完成!')
-                    break
+            if ReqDataSingleton().isGetOptimize:
+                self.queue.put("[启用]爬取速度优化算法")
+                maeJp = 0, jp = 0
+                while self.running:
+                    date = ReqDataSingleton().yearList.next()
+                    maeJp = jp
+                    jp = self.getDanMaKuPrime(date)
+                    if (jp == -1 and maeJp != 0):
+                        # 回溯
+                        for _ in range(maeJp - 1):
+                            ReqDataSingleton().yearList.unNext() # -= 1
+                            ReqDataSingleton().yearList.unNext() # -= 1
+                            self.getDanMaKuPrime(ReqDataSingleton().yearList.next()) # += 1
+
+                        # 归位
+                        for _ in range(maeJp + 1):
+                            ReqDataSingleton().yearList.next()
+                    else:
+                        for _ in range(jp):
+                            date = ReqDataSingleton().yearList.next()
+                    self.saveConfig()
+                    if datetime.datetime.strptime(date, '%Y-%m-%d') >= datetime.datetime.strptime(ReqDataSingleton().endDate, '%Y-%m-%d'): # 爬取完毕
+                        self.isThreadExit = True
+                        self.queue.put(f'爬取 cid: {ReqDataSingleton().cid} 完成!')
+                        break
+            else:
+                while self.running:
+                    date = ReqDataSingleton().yearList.next()
+                    self.getDanMaKu(date)
+                    self.saveConfig()
+                    if datetime.datetime.strptime(date, '%Y-%m-%d') >= datetime.datetime.strptime(ReqDataSingleton().endDate, '%Y-%m-%d'): # 爬取完毕
+                        self.isThreadExit = True
+                        self.queue.put(f'爬取 cid: {ReqDataSingleton().cid} 完成!')
+                        break
         except ValueError:
             print("子线程已退出")
             self.isThreadExit = True
@@ -409,7 +534,7 @@ class VideoScraperUI:
         """
         if self.running:
             self.addLog("暂停爬取", "yellow")
-            self.save()
+            self.saveConfig()
         else:
             self.addLog("继续爬取", "yellow")
             self._startThread()
@@ -521,9 +646,9 @@ class VideoScraperUI:
             self.custom_font.configure(size=size)
             self.updateTheme()
     
-    def save(self):
+    def saveConfig(self):
         """
-        保存
+        保存日志, 以实时更新
         """
         ReqDataSingleton().startDate = self.dateObj.start_date.get()
         if ReqDataSingleton().isGetToNowTime:
@@ -536,7 +661,7 @@ def start() -> None:
     root = tk.Tk()
     app = VideoScraperUI(root)
     root.mainloop()
-    app.save()
+    app.saveConfig()
     app.running = False
     app.isThreadExit = True
     print("等待退出...(2秒)")

@@ -3,7 +3,7 @@ import threading
 import time
 import random
 from ..utils import configUtils
-from ..utils import yearDaysUitls
+from ..utils import yearDaysUtils
 
 def singleton(cls):
     instances = {}
@@ -37,6 +37,7 @@ class ReqDataSingleton:
         self.endDate = time.strftime("%Y-%m-%d", time.localtime()) # 终止日期
         self.isGetAllDanMaKu = True
         self.isGetToNowTime = True
+        self.isGetOptimize = True # 是否开启爬取优化
 
         ### 爬取间隔时间 [timerMin, timerMax] ###
         self.timerMin = 8
@@ -51,12 +52,13 @@ class ReqDataSingleton:
         self.cid = data.get('settings', {}).get('cid', -1)
         self.startDate = data.get('settings', {}).get('startDate', '2009-06-26')  # 爬取的起始日期
         self.endDate = data.get('settings', {}).get('endDate', time.strftime("%Y-%m-%d", time.localtime()))  # 终止日期
-        self.isGetAllDanMaKu = bool(data.get('settings', {}).get('isGetAllDanmMaKu', True))
+        self.isGetAllDanMaKu = bool(data.get('settings', {}).get('isGetAllDanMaKu', True))
         self.isGetToNowTime = bool(data.get('settings', {}).get('isGetToNowTime', True))
+        self.isGetOptimize = bool(data.get('settings', {}).get('isGetOptimize', True))
         
         self.yearList = None # yearDaysUitls.YearFamily(2009, int(time.strftime("%Y", time.localtime())))
         if (len(data.get('run', {}).get('yearFamily', {}).get("list", [])) > 0):
-            self.yearList = yearDaysUitls.YearFamily.fromJson(data.get('run', {}).get('yearFamily', {}))
+            self.yearList = yearDaysUtils.YearFamily.fromJson(data.get('run', {}).get('yearFamily', {}))
         self.outFile = data.get('run', {}).get('outFile', "danmaku.xml")
 
         if self.isGetToNowTime:
@@ -73,8 +75,9 @@ class ReqDataSingleton:
                 'cid': self.cid,
                 'startDate': self.startDate,
                 'endDate': self.endDate,
-                'isGetAllDanmMaKu': self.isGetAllDanMaKu, # 获取全弹幕
-                'isGetToNowTime': self.isGetToNowTime,     # 获取直到当前时间 
+                'isGetAllDanMaKu': self.isGetAllDanMaKu,  # 获取全弹幕
+                'isGetToNowTime': self.isGetToNowTime,    # 获取直到当前时间 
+                'isGetOptimize': self.isGetToNowTime,     # 爬取优化
             },
             'net': {
                 'UserAgent': self.UserAgent,
