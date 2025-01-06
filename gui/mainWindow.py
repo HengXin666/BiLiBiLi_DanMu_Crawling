@@ -20,7 +20,7 @@ from . import tkcalendar
 class VideoScraperUI:
     def __init__(self, master):
         self.master = master
-        self.master.title("弹幕爬取工具 V1.1.8 By Heng_Xin")
+        self.master.title("弹幕爬取工具 V1.2.1 By Heng_Xin")
 
         self.isGetAllDanMaKu = tk.BooleanVar(value=ReqDataSingleton().isGetAllDanMaKu)
         self.isGetToNowTime = tk.BooleanVar(value=ReqDataSingleton().isGetToNowTime)
@@ -428,8 +428,7 @@ class VideoScraperUI:
                 dmList = getHistoricalDanMaKu(date, ReqDataSingleton().cid)
                 poolSize = len(dmList)
                 addCnt = self.saveDanMaKu(date, dmList)
-                if addCnt == poolSize:
-                    self.queue.put(f"爬取 {date} 触发回溯机制!")
+                if addCnt == poolSize: # 触发回溯
                     return -1
                 return addCntToNextCnt(addCnt, poolSize)
             except:
@@ -485,6 +484,8 @@ class VideoScraperUI:
                     self.queue.put("开始二分爬取, 请勿退出!!!")
                     ReqDataSingleton().yearList.findBoundary(self.getDanMaKu)
                     self.saveConfig()
+                    if ReqDataSingleton().isGetOptimize:
+                        self.dmIdCnt = set()
                     self.queue.put("二分爬取结束, 状态已记录..")
                 else:
                     ReqDataSingleton().yearList.nowAllIndex = 0
@@ -492,21 +493,23 @@ class VideoScraperUI:
             self.queue.put("开始顺序爬取")
             if ReqDataSingleton().isGetOptimize:
                 self.queue.put("[启用]爬取速度优化算法")
-                maeJp = 0, jp = 0
+                maeJp = 0
+                jp = 0
                 while self.running:
-                    date = ReqDataSingleton().yearList.next()
+                    date = ReqDataSingleton().yearList.next() # += 1
                     maeJp = jp
                     jp = self.getDanMaKuPrime(date)
                     if (jp == -1 and maeJp != 0):
+                        self.queue.put(f"爬取 {date} 触发回溯机制! 需要回溯 {maeJp} 次!")
                         # 回溯
-                        for _ in range(maeJp - 1):
+                        for _ in range(maeJp):
                             ReqDataSingleton().yearList.unNext() # -= 1
                             ReqDataSingleton().yearList.unNext() # -= 1
                             self.getDanMaKuPrime(ReqDataSingleton().yearList.next()) # += 1
-
                         # 归位
-                        for _ in range(maeJp + 1):
+                        for _ in range(maeJp):
                             ReqDataSingleton().yearList.next()
+                        self.queue.put(f"回溯结束! 继续爬取~")
                     else:
                         for _ in range(jp):
                             date = ReqDataSingleton().yearList.next()
@@ -598,7 +601,7 @@ class VideoScraperUI:
         about_window.geometry("600x240")
 
         # 添加信息标签
-        tk.Label(about_window, text="弹幕爬取工具 V1.1.8", font=("黑体", 14)).pack(pady=10)
+        tk.Label(about_window, text="弹幕爬取工具 V1.2.1", font=("黑体", 14)).pack(pady=10)
 
         # 作者
         tk.Label(about_window, text="作者: Heng_Xin", font=("黑体", 14), fg="#990099").pack(pady=10)
@@ -608,7 +611,7 @@ class VideoScraperUI:
         link.pack()
         link.bind("<Button-1>", lambda e: webbrowser.open_new("https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling"))  # 替换为你的链接
 
-        tk.Label(about_window, text="当前版本更新时间: 2024-12-11", font=("黑体", 14)).pack(pady=10)
+        tk.Label(about_window, text="当前版本更新时间: 2025-1-6", font=("黑体", 14)).pack(pady=10)
 
         # 添加关闭按钮
         close_button = tk.Label(about_window, text="关闭", fg="red", cursor="hand2", font=("黑体", 14))
