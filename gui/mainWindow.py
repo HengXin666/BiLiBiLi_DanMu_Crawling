@@ -20,7 +20,7 @@ from . import tkcalendar
 class VideoScraperUI:
     def __init__(self, master):
         self.master = master
-        self.master.title("弹幕爬取工具 V1.2.2 By Heng_Xin")
+        self.master.title("弹幕爬取工具 V1.2.3 By Heng_Xin")
 
         self.isGetAllDanMaKu = tk.BooleanVar(value=ReqDataSingleton().isGetAllDanMaKu)
         self.isGetToNowTime = tk.BooleanVar(value=ReqDataSingleton().isGetToNowTime)
@@ -624,7 +624,7 @@ class VideoScraperUI:
         about_window.geometry("600x240")
 
         # 添加信息标签
-        tk.Label(about_window, text="弹幕爬取工具 V1.2.2", font=("黑体", 14)).pack(pady=10)
+        tk.Label(about_window, text="弹幕爬取工具 V1.2.3", font=("黑体", 14)).pack(pady=10)
 
         # 作者
         tk.Label(about_window, text="作者: Heng_Xin", font=("黑体", 14), fg="#990099").pack(pady=10)

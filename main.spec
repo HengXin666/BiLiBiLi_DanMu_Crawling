@@ -2,6 +2,7 @@
 
 # 2024-11-2 13:20:03
 # 使用 pyinstaller main.spec 命令进行打包!
+# 进入虚拟环境 (activate danmaku)
 # By Heng_Xin
 
 a = Analysis(

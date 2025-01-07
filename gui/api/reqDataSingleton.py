@@ -77,7 +77,7 @@ class ReqDataSingleton:
                 'endDate': self.endDate,
                 'isGetAllDanMaKu': self.isGetAllDanMaKu,  # 获取全弹幕
                 'isGetToNowTime': self.isGetToNowTime,    # 获取直到当前时间 
-                'isGetOptimize': self.isGetToNowTime,     # 爬取优化
+                'isGetOptimize': self.isGetOptimize,     # 爬取优化
             },
             'net': {
                 'UserAgent': self.UserAgent,
