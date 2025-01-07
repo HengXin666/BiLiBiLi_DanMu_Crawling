@@ -129,7 +129,7 @@ pip install requests protobuf
 [![Forkers repo roster for @HengXin666/BiLiBiLi_DanMu_Crawling](https://reporoster.com/forks/HengXin666/BiLiBiLi_DanMu_Crawling)](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/network/members)
 
 ## 更新日志
-
+- [2025-1-7 14:47:55] [V1.2.2] 修复`跳步爬取`, 如果跳出了有效范围, 会不爬取的问题, 即如果跳过了需要爬取的那一天, 则会默认爬取`endDate`那一天, 以防遗漏.
 - [2025-1-6 17:30:33] [V1.2.1] 新增`跳步爬取`, 根据弹幕池的特性, 采取跳步爬取模式, 将连续几天的弹幕合并为一天爬取, 可是时间一般为原来的 $\frac{1}{5}$ (详细测试请查看[#8](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/issues/8), 原理[#7](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/issues/7))
 - [2024-12-11 17:13:39] [V1.1.8] 修复指定开始、结束爬取时间无法及时生效的bug, 修复在去重文件时候出现Bas弹幕, 会导致程序崩溃的问题; 优化: 文件默认后缀是xml文件, 改名字不用手动输入后缀.xml
 - [2024-11-15 14:56:05] [V1.1.7] 修复无法指定起始日期的bug
