@@ -165,6 +165,8 @@ pip install requests protobuf
 [![Forkers repo roster for @HengXin666/BiLiBiLi_DanMu_Crawling](https://reporoster.com/forks/HengXin666/BiLiBiLi_DanMu_Crawling)](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/network/members)
 
 ## 八、更新日志
+
+- [2025-4-29 21:00:25] [V1.3.1] 支持从番剧获取cid (支持从md、ss、ep号获取) ([#9](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/issues/9))
 - [2025-1-7 16:10:38] [V1.2.3] 修复无法保存是否使用`跳步爬取`的bug
 - [2025-1-7 14:47:55] [V1.2.2] 修复`跳步爬取`, 如果跳出了有效范围, 会不爬取的问题, 即如果跳过了需要爬取的那一天, 则会默认爬取`endDate`那一天, 以防遗漏.
 - [2025-1-6 17:30:33] [V1.2.1] 新增`跳步爬取`, 根据弹幕池的特性, 采取跳步爬取模式, 将连续几天的弹幕合并为一天爬取, 可是时间一般为原来的 $\frac{1}{5}$ (详细测试请查看[#8](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/issues/8), 原理[#7](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/issues/7))

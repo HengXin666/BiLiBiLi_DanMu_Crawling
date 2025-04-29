@@ -97,6 +97,31 @@ class VideoInfoApp:
             return av2bv(int(av_number))
 
         return None
+    
+    def extractANiMe(self):
+        """
+        提前输入框, 获取md, ss, ep号
+
+        return dict()
+
+        其中 
+            dict()['mdId']: str | None
+            dict()['ssId']: str | None
+            dict()['epId']: str | None
+        """
+        
+        # 获取输入框的文本
+        text = self.link_entry.get()
+
+        mdMatch = re.search(r"/md(\d+)", text)
+        ssMatch = re.search(r"/ss(\d+)", text)
+        epMatch = re.search(r"/ep(\d+)", text)
+
+        return {
+            'mdId': mdMatch.group(1) if mdMatch else None,
+            'ssId': ssMatch.group(1) if ssMatch else None,
+            'epId': epMatch.group(1) if epMatch else None,
+        }
 
 
     def getInfo(self):
@@ -113,11 +138,19 @@ class VideoInfoApp:
 
         try:
             # 测试 https://www.bilibili.com/video/BV1Wx411F7Hs/
+            # 测试番剧 
             bv = self.extractBv()
-            if (bv != None):
+            anime = self.extractANiMe()
+            if (bv != None): # 解析普通视频
                 self.data = videoApi.获取视频信息(bv)
                 if self.data[0] != 0:
                     self.info_label['text'] = f"[错误]: BiliBili Api 异常: [{'请求错误' if self.data[0] == -400 else '无视频'}]; 对于 BV{bv}"
+                    return
+                self.data = self.data[1]
+            elif (anime != None): # 解析番剧
+                self.data = videoApi.获取番剧信息(mdId=anime['mdId'], ssId=anime['ssId'], epId=anime['epId'])
+                if self.data[0] != 0:
+                    self.info_label['text'] = f"[错误]: BiliBili Api 异常: [{'请求错误' if self.data[0] == -400 else '无视频'}]; 对于 {anime}"
                     return
                 self.data = self.data[1]
             else:
