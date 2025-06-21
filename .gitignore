@@ -6,10 +6,12 @@ config/
 
 # 输出
 output/
+*.AppImage
 
 # 打包
 dist/
 build/
+tmp-hx-build/
 
 # Logs
 *.log

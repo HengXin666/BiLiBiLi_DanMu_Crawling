@@ -1,7 +1,9 @@
 import os
 
+from .baseDirUtils import getRelativeOutputDir
+
 # 输出目录
-outputDir = os.path.join(os.path.dirname(__file__), '..', '..', 'output')
+outputDir = getRelativeOutputDir()
 
 class DanMaKuXmlUtils:
     def initXmlHead(fileName:str, cid: int) -> bool:

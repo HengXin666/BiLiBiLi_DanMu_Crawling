@@ -2,15 +2,17 @@ import os
 import json
 import time
 
+from .baseDirUtils import getAppBaseDir
+
 def loadConfig() -> dict:
     """
     加载配置，如果文件不存在则创建默认配置
     """
-    config_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'config')
-    config_path = os.path.join(os.path.dirname(__file__), '..', '..', 'config', 'config.json')
+    config_dir = getAppBaseDir()
+    config_path = os.path.join(config_dir, 'config.json')
 
     if not os.path.isdir(config_dir):
-            os.makedirs(config_dir)
+        os.makedirs(config_dir)
 
     # 检查配置文件是否存在
     if not os.path.exists(config_path):
@@ -48,7 +50,8 @@ def writeConfig(config: dict) -> None:
     """
     写入配置
     """
-    config_path = os.path.join(os.path.dirname(__file__), '..', '..', 'config', 'config.json')
+    config_dir = getAppBaseDir()
+    config_path = os.path.join(config_dir, 'config.json')
 
     with open(config_path, 'w') as configfile:
         json.dump(config, configfile, indent=4)

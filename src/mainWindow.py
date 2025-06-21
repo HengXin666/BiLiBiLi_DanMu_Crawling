@@ -227,7 +227,10 @@ class VideoScraperUI:
         if not ReqDataSingleton().isGetAllDanMaKu:
             ReqDataSingleton().startDate = self.dateObj.start_date.get()
             ReqDataSingleton().endDate = self.dateObj.end_date.get()
-        if not self.running: # 开始爬取            
+        if not self.running: # 开始爬取
+            if len(ReqDataSingleton().cookies) == 0:
+                self.addLog("请添加凭证再开始爬取!", "red")
+                return
             if ReqDataSingleton().yearList != None and not messagebox.askyesno("注意: 真的要重新开始爬取吗?", "点击[开始爬取]是重新爬取;\n会清空之前的记录, 请做好备份!\n(继续爬取的按钮在旁边)"):
                 self.addLog("您取消了重新爬取", "red")
                 return
