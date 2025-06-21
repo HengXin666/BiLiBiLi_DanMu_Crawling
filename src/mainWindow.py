@@ -15,12 +15,13 @@ from .api.danMaKuApi import getHistoricalDanMaKu, getBasDanMaKu
 from .credentialManager import CredentialManager
 from .utils.yearDaysUtils import YearFamily
 from .utils.danMaKuXmlUtils import DanMaKuXmlUtils
+from .info import version
 from . import tkcalendar
 
 class VideoScraperUI:
     def __init__(self, master):
         self.master = master
-        self.master.title("弹幕爬取工具 V1.3.1 By Heng_Xin")
+        self.master.title(f"弹幕爬取工具 V{version.HX_BILIBILI_DANMU_CRAWLING_VERSION} By Heng_Xin")
 
         self.isGetAllDanMaKu = tk.BooleanVar(value=ReqDataSingleton().isGetAllDanMaKu)
         self.isGetToNowTime = tk.BooleanVar(value=ReqDataSingleton().isGetToNowTime)
@@ -253,6 +254,8 @@ class VideoScraperUI:
             if messagebox.askyesno("确认", "确定要终止爬取吗?"):
                 self.running = False
                 self.addLog("终止爬取", "red")
+                # 为弹幕文件写入 </i>
+                DanMaKuXmlUtils.writeDmEndToXml(ReqDataSingleton().outFile)
                 self.saveConfig()
         self.updateButtonTextByRunning()
     
@@ -624,7 +627,7 @@ class VideoScraperUI:
         about_window.geometry("600x240")
 
         # 添加信息标签
-        tk.Label(about_window, text="弹幕爬取工具 V1.3.1", font=("黑体", 14)).pack(pady=10)
+        tk.Label(about_window, text=f"弹幕爬取工具 V{version.HX_BILIBILI_DANMU_CRAWLING_VERSION}", font=("黑体", 14)).pack(pady=10)
 
         # 作者
         tk.Label(about_window, text="作者: Heng_Xin", font=("黑体", 14), fg="#990099").pack(pady=10)
@@ -634,7 +637,7 @@ class VideoScraperUI:
         link.pack()
         link.bind("<Button-1>", lambda e: webbrowser.open_new("https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling"))  # 替换为你的链接
 
-        tk.Label(about_window, text="当前版本更新时间: 2025-4-29", font=("黑体", 14)).pack(pady=10)
+        tk.Label(about_window, text=f"当前版本更新时间: {version.HX_BILIBILI_DANMU_CRAWLING_UPDATE_DATE}", font=("黑体", 14)).pack(pady=10)
 
         # 添加关闭按钮
         close_button = tk.Label(about_window, text="关闭", fg="red", cursor="hand2", font=("黑体", 14))

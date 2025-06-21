@@ -13,15 +13,15 @@ class DanMaKuXmlUtils:
                 os.makedirs(outputDir)
             filePath = os.path.join(outputDir, fileName)
             with open(filePath, 'x', encoding='UTF-8') as f: # 文件已存在则, 报错
-                f.write(f'<?xml version="1.0" encoding="UTF-8"?><i><chatserver>chat.bilibili.com</chatserver><chatid>{cid}</chatid><mission>0</mission><maxlimit>3000</maxlimit></i>\n')
+                f.write(f'<?xml version="1.0" encoding="UTF-8"?><i><chatserver>chat.bilibili.com</chatserver><chatid>{cid}</chatid><mission>0</mission><maxlimit>3000</maxlimit><state>0</state><real_name>0</real_name><source>k-v</source>\n')
             return True
         except:
             return False
     
-    def remove(fileName:str):
+    def remove(fileName: str):
         os.remove(os.path.join(outputDir, fileName))
 
-    def writeDmToXml(fileName:str, xmlDmList: list):
+    def writeDmToXml(fileName: str, xmlDmList: list):
         """
         写入列表内容到文件
         """
@@ -29,6 +29,14 @@ class DanMaKuXmlUtils:
         with open(filePath, 'a', encoding='UTF-8') as f:
             for dm in xmlDmList:
                 f.write(dm)
+
+    def writeDmEndToXml(fileName: str):
+        """
+        为弹幕文件写入终止终止符 </i>
+        """
+        filePath = os.path.join(outputDir, fileName)
+        with open(filePath, 'a', encoding='UTF-8') as f:
+            f.write("</i>")
 
     def isLineCountGreaterThan(fileName: str, n: int = 3000) -> int:
         """
