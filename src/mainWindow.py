@@ -337,7 +337,7 @@ class VideoScraperUI:
                 self.dmIdCnt.add(int(it[7]))
                 # 写入弹幕
                 writeXmlDm.append(
-                    f'<d p="{it[0]},{it[1]},{it[2]},{it[3]},{it[4]},{it[5]},{it[6]},{it[7]}">{it[8]}</d>\n'
+                    f'<d p="{it[0]},{it[1]},{it[2]},{it[3]},{it[4]},{it[5]},{it[6]},{it[7]},{it[8]}">{it[9]}</d>\n'
                 )
                 if int(it[1]) == 7:
                     seniorDmCnt += 1

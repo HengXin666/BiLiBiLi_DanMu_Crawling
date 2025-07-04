@@ -56,7 +56,8 @@ def DeserializeNormalSegmentedPacketDanMaKu(data) -> list[tuple]:
             it.pool,                #5 pool <-> 弹幕池类型 (0 普通, 2 bas)
             it.midHash,             #6 midHash <-> 发送者mid的HASH
             it.id,                  #7 id <-> 弹幕dmid: int32 唯一的!
-            it.content              #8 content <-> 弹幕内容
+            it.weight,              #8 weight <-> 弹幕权重
+            it.content              #9 content <-> 弹幕内容
         )
     return list(map(_extractInfo, danmakuSeg.elems))
 
