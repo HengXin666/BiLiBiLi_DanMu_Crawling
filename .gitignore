@@ -1,6 +1,9 @@
 # Python bytecode
 *.pyc
 
+# 本地测试
+test.py
+
 # 配置
 config/
 

@@ -68,7 +68,7 @@ message Button {
     //
     string text = 1;
     //
-    int32 action = 2;
+    ToastFunctionType action = 2;
 }
 
 //
@@ -117,7 +117,7 @@ message CheckBoxV2 {
     //
     string text = 1;
     //
-    int32 type = 2;
+    CheckboxType type = 2;
     //
     bool default_value = 3;
 }
@@ -151,13 +151,13 @@ message ClickButtonV2 {
     //
     repeated string landscape_text_focus = 4;
     //
-    int32 render_type = 5;
+    RenderType render_type = 5;
     //
     bool text_input_post = 6;
     //
     bool exposure_once = 7;
     //
-    int32 exposure_type = 8;
+    ExposureType exposure_type = 8;
 }
 
 // 互动弹幕条目信息
@@ -167,7 +167,7 @@ message CommandDm {
     // 对象视频cid
     int64 oid = 2;
     // 发送者mid
-    string mid = 3;
+    int64 mid = 3;
     // 互动弹幕指令
     string command = 4;
     // 互动弹幕正文
@@ -627,7 +627,7 @@ message LabelV2 {
     //
     bool exposure_once = 3;
     //
-    int32 exposure_type = 4;
+    ExposureType exposure_type = 4;
 }
 
 //
@@ -696,7 +696,7 @@ message PostPanelV2 {
     //
     int64 end = 2;
     //
-    int32 biz_type = 3;
+    PostPanelBizType biz_type = 3;
     //
     ClickButtonV2 click_button = 4;
     //
@@ -710,7 +710,7 @@ message PostPanelV2 {
     //
     LabelV2 label = 9;
     //
-    int32 post_status = 10;
+    PostStatus post_status = 10;
 }
 
 //
@@ -829,7 +829,7 @@ message ToastButtonV2 {
     //
     string text = 1;
     //
-    int32 action = 2;
+    ToastFunctionType action = 2;
 }
 
 //

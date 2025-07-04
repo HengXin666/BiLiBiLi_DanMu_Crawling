@@ -40,14 +40,15 @@ def 获取弹幕():
         print(text_format.MessageToString(danmaku_seg.elems[i], as_utf8=True), end='\n\n')
 """
 
-def DeserializeNormalSegmentedPacketDanMaKu(data) -> list[tuple]:
+def deserializeNormalSegmentedPacketDanMaKu(data) -> list[tuple]:
     """
     反序列化 普通分段包弹幕
     """
     danmakuSeg = Danmaku.DmSegMobileReply()
     danmakuSeg.ParseFromString(data)
     def _extractInfo(it):
-        # print(it)
+        if (it.id == 981105711593291776):
+            print(it)
         """
         // 弹幕条目
         message DanmakuElem {
@@ -120,7 +121,7 @@ def getHistoricalDanMaKu(date: str, cid: int) -> list[tuple]:
     """
     <d p="490.19100,1,25,16777215,1584268892,0,a16fe0dd,29950852386521095,?">从结尾回来看这里，更感动了！</d>
     """
-    return DeserializeNormalSegmentedPacketDanMaKu(data)
+    return deserializeNormalSegmentedPacketDanMaKu(data)
 
 def getBasDanMaKu(cid: int) -> list[tuple]:
     """
@@ -136,7 +137,7 @@ def getBasDanMaKu(cid: int) -> list[tuple]:
         # 使用普通分段包弹幕的proto结构体反序列化此bin数据
         print(i_url)
         res.extend(
-            DeserializeNormalSegmentedPacketDanMaKu(
+            deserializeNormalSegmentedPacketDanMaKu(
                 requests.get(
                     i_url, 
                     cookies=ReqDataSingleton().getAnyOneCookies(),
@@ -146,6 +147,28 @@ def getBasDanMaKu(cid: int) -> list[tuple]:
             )
         )
     return res
+
+def getRealTimeDanMaKu(segmentIndex: int, cid: int) -> list[tuple]:
+    """
+    获取实时弹幕
+        - segmentIndex: 仅获取 6min 的整数倍时间内的弹幕, 6min 内最多弹幕数为 6000 条(如第一包中弹幕progress值域为0-360000)
+    
+    返回值
+        - list[元组], 每一项是弹幕数据
+    """
+    url = 'https://api.bilibili.com/x/v2/dm/web/seg.so'
+    params = {
+        'type': 1,                    # 弹幕类型 (1: 视频弹幕)
+        'oid': cid,                   # cid  1176840
+        'segment_index': segmentIndex # 弹幕分段
+    }
+    resp = requests.get(url, params, cookies=ReqDataSingleton().getAnyOneCookies(), headers=ReqDataSingleton().UserAgent, timeout=10)
+    data = resp.content
+
+    """
+    <d p="490.19100,1,25,16777215,1584268892,0,a16fe0dd,29950852386521095,?">从结尾回来看这里，更感动了！</d>
+    """
+    return deserializeNormalSegmentedPacketDanMaKu(data)
 
 # 测试
 # def dmTest():
@@ -169,4 +192,4 @@ def 查询某月份有历史弹幕的天数列表(dateMonth: str):
 """
 
 if __name__ == '__main__':
-    getBasDanMaKu(1176840)
+    getRealTimeDanMaKu(1, 1176840)
