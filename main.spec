@@ -9,7 +9,7 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('gui', 'gui'), ('gui/api', 'gui/api'), ('gui/utils', 'gui/utils')],
+    datas=[('src', 'src'), ('src/api', 'src/api'), ('src/utils', 'src/utils'), ('src/info', 'src/info')],
     hiddenimports=['google.protobuf'],
     hookspath=[],
     hooksconfig={},
