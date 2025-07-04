@@ -47,17 +47,56 @@ def DeserializeNormalSegmentedPacketDanMaKu(data) -> list[tuple]:
     danmakuSeg = Danmaku.DmSegMobileReply()
     danmakuSeg.ParseFromString(data)
     def _extractInfo(it):
+        # print(it)
+        """
+        // 弹幕条目
+        message DanmakuElem {
+            // 弹幕dmid
+            int64 id = 1;
+            // 弹幕出现位置(单位ms)
+            int32 progress = 2;
+            // 弹幕类型 1 2 3:普通弹幕 4:底部弹幕 5:顶部弹幕 6:逆向弹幕 7:高级弹幕 8:代码弹幕 9:BAS弹幕(pool必须为2)
+            int32 mode = 3;
+            // 弹幕字号
+            int32 fontsize = 4;
+            // 弹幕颜色
+            uint32 color = 5;
+            // 发送者mid hash
+            string midHash = 6;
+            // 弹幕正文
+            string content = 7;
+            // 发送时间
+            int64 ctime = 8;
+            // 权重 用于屏蔽等级 区间:[1,10]
+            int32 weight = 9;
+            // 动作
+            string action = 10;
+            // 弹幕池 0:普通池 1:字幕池 2:特殊池(代码/BAS弹幕)
+            int32 pool = 11;
+            // 弹幕dmid str
+            string idStr = 12;
+            // 弹幕属性位(bin求AND)
+            // bit0:保护 bit1:直播 bit2:高赞
+            int32 attr = 13;
+            //
+            string animation = 22;
+            // 大会员专属颜色
+            DmColorfulType colorful = 24;
+        }
+        """
         return (
-            it.progress / 1000.0,   #0 progress <-> 出现时间 # (需要 / 1000) xml为float类型
-            it.mode,                #1 mode <-> 弹幕类型
-            it.fontsize,            #2 fontsize <-> 弹幕字号
-            it.color,               #3 color <-> 弹幕颜色
-            it.ctime,               #4 ctime <-> 弹幕发送时间
-            it.pool,                #5 pool <-> 弹幕池类型 (0 普通, 2 bas)
-            it.midHash,             #6 midHash <-> 发送者mid的HASH
-            it.id,                  #7 id <-> 弹幕dmid: int32 唯一的!
-            it.weight,              #8 weight <-> 弹幕权重
-            it.content              #9 content <-> 弹幕内容
+            it.progress / 1000.0,   #00 progress <-> 出现时间 # (需要 / 1000, 转为 秒) xml为float类型, 单位是秒
+            it.mode,                #01 mode <-> 弹幕类型
+            it.fontsize,            #02 fontsize <-> 弹幕字号
+            it.color,               #03 color <-> 弹幕颜色
+            it.ctime,               #04 ctime <-> 弹幕发送时间
+            it.pool,                #05 pool <-> 弹幕池类型 (0 普通, 2 bas)
+            it.midHash,             #06 midHash <-> 发送者mid的HASH
+            it.id,                  #07 id <-> 弹幕dmid: int32 唯一的!
+            it.weight,              #08 weight <-> 弹幕权重 [1, 10], 如果不存在则为 0
+            it.content,             #09 content <-> 弹幕内容
+            it.attr                 #10 attr <-> 弹幕属性位, 需要的是 `it.attr & 1` 来判断是否是保护弹幕
+                                    #   @todo 用于最新的弹幕爬取算法
         )
     return list(map(_extractInfo, danmakuSeg.elems))
 
@@ -79,7 +118,7 @@ def getHistoricalDanMaKu(date: str, cid: int) -> list[tuple]:
     data = resp.content
 
     """
-    <d p="490.19100,1,25,16777215,1584268892,0,a16fe0dd,29950852386521095">从结尾回来看这里，更感动了！</d>
+    <d p="490.19100,1,25,16777215,1584268892,0,a16fe0dd,29950852386521095,?">从结尾回来看这里，更感动了！</d>
     """
     return DeserializeNormalSegmentedPacketDanMaKu(data)
 

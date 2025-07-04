@@ -175,6 +175,7 @@ pip install requests protobuf
 
 ## 八、更新日志
 
+- [2025-07-04 10:20:23] [V1.4.2] 合并了 [#17](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/pull/17) 以支持获取弹幕权重(`权重字段可用于本地过滤弹幕(b站旧版的弹幕等级屏蔽功能)`), 但是似乎解析不到这个字段(?)
 - [2025-06-21 23:13:02] [V1.4.1] 修复没有设置凭证, 就开始爬取会导致子线程退出的问题, 现在会及时给出提醒.
 - [2025-06-21 23:04:54] [V1.4.0] 添加了一键构建 `AppImage` 的脚本 (自用) | 修改配置文件存放于系统配置文件目录 ([#16](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/issues/16)) | 并且文件输出适配 win/linux 的环境
 - [2025-06-21 17:31:55] [V1.3.2] 修复输出弹幕XML格式的问题 (注意, 如果需要获取到完整的XML, 需要手动终止爬取; 否则就需要手动为弹幕末尾添加`</i>`; 不然可能会在某些地方解析弹幕出错) ([#15](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/issues/15)) | 调整了部分目录结构 | 新增了单独的版本描述文件

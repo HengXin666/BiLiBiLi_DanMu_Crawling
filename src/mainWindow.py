@@ -329,6 +329,19 @@ class VideoScraperUI:
         Returns:
             int: 新增弹幕数量
         """
+        def _formatDanmaku(it: tuple) -> str:
+            """序列化弹幕为xml
+
+            Args:
+                it (tuple): 弹幕项
+
+            Returns:
+                str: xmlStr
+            """
+            pBase = f"{it[0]},{it[1]},{it[2]},{it[3]},{it[4]},{it[5]},{it[6]},{it[7]}"
+            # 注意 8 是可选字段, 合法范围是 [1, 10], 0 表示该字段不存在
+            pFull = f"{pBase},{it[8]}" if it[8] != 0 else pBase
+            return f'<d p="{pFull}">{it[9]}</d>\n'
         writeXmlDm = []
         seniorDmCnt = 0
         nowAdd = 0
@@ -336,9 +349,7 @@ class VideoScraperUI:
             if int(it[7]) not in self.dmIdCnt:
                 self.dmIdCnt.add(int(it[7]))
                 # 写入弹幕
-                writeXmlDm.append(
-                    f'<d p="{it[0]},{it[1]},{it[2]},{it[3]},{it[4]},{it[5]},{it[6]},{it[7]},{it[8]}">{it[9]}</d>\n'
-                )
+                writeXmlDm.append(_formatDanmaku(it))
                 if int(it[1]) == 7:
                     seniorDmCnt += 1
                 nowAdd += 1
