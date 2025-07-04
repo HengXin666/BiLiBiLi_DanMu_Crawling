@@ -47,8 +47,7 @@ def deserializeNormalSegmentedPacketDanMaKu(data) -> list[tuple]:
     danmakuSeg = Danmaku.DmSegMobileReply()
     danmakuSeg.ParseFromString(data)
     def _extractInfo(it):
-        if (it.id == 981105711593291776):
-            print(it)
+        # print(it)
         """
         // 弹幕条目
         message DanmakuElem {
