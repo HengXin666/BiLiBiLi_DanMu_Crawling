@@ -175,6 +175,7 @@ pip install requests protobuf
 
 ## 八、更新日志
 
+- [2025-07-10 21:40:32] [V1.5.0] 修复了 [#18](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/issues/18) 和 [#19](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/issues/19) 中提到的 XML 转义字符的问题, 现在程序会对这些字符进行转义了!
 - [2025-07-04 10:20:23] [V1.4.2] 合并了 [#17](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/pull/17) 以支持获取弹幕权重(`权重字段可用于本地过滤弹幕(b站旧版的弹幕等级屏蔽功能)`), 但是似乎解析不到这个字段(?)
 - [2025-06-21 23:13:02] [V1.4.1] 修复没有设置凭证, 就开始爬取会导致子线程退出的问题, 现在会及时给出提醒.
 - [2025-06-21 23:04:54] [V1.4.0] 添加了一键构建 `AppImage` 的脚本 (自用) | 修改配置文件存放于系统配置文件目录 ([#16](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/issues/16)) | 并且文件输出适配 win/linux 的环境

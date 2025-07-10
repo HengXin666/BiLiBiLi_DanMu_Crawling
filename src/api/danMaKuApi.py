@@ -4,6 +4,7 @@ import requests
 from .pb import dm_pb2 as Danmaku
 from .pb import basDm_pb2 as BasDanmaku
 from .reqDataSingleton import ReqDataSingleton
+from ..utils.xmlEscapeUtils import XmlEscapeUtil
 
 # 设置代理
 # proxies = {
@@ -85,18 +86,18 @@ def deserializeNormalSegmentedPacketDanMaKu(data) -> list[tuple]:
         }
         """
         return (
-            it.progress / 1000.0,   #00 progress <-> 出现时间 # (需要 / 1000, 转为 秒) xml为float类型, 单位是秒
-            it.mode,                #01 mode <-> 弹幕类型
-            it.fontsize,            #02 fontsize <-> 弹幕字号
-            it.color,               #03 color <-> 弹幕颜色
-            it.ctime,               #04 ctime <-> 弹幕发送时间
-            it.pool,                #05 pool <-> 弹幕池类型 (0 普通, 2 bas)
-            it.midHash,             #06 midHash <-> 发送者mid的HASH
-            it.id,                  #07 id <-> 弹幕dmid: int32 唯一的!
-            it.weight,              #08 weight <-> 弹幕权重 [1, 10], 如果不存在则为 0
-            it.content,             #09 content <-> 弹幕内容
-            it.attr                 #10 attr <-> 弹幕属性位, 需要的是 `it.attr & 1` 来判断是否是保护弹幕
-                                    #   @todo 用于最新的弹幕爬取算法
+            it.progress / 1000.0,             # 00 progress <-> 出现时间 # (需要 / 1000, 转为 秒) xml为float类型, 单位是秒
+            it.mode,                          # 01 mode <-> 弹幕类型
+            it.fontsize,                      # 02 fontsize <-> 弹幕字号
+            it.color,                         # 03 color <-> 弹幕颜色
+            it.ctime,                         # 04 ctime <-> 弹幕发送时间
+            it.pool,                          # 05 pool <-> 弹幕池类型 (0 普通, 2 bas)
+            it.midHash,                       # 06 midHash <-> 发送者mid的HASH
+            it.id,                            # 07 id <-> 弹幕dmid: int32 唯一的!
+            it.weight,                        # 08 weight <-> 弹幕权重 [1, 10], 如果不存在则为 0
+            XmlEscapeUtil.escape(it.content), # 09 content <-> 弹幕内容 (并且进行转义)
+            it.attr                           # 10 attr <-> 弹幕属性位, 需要的是 `it.attr & 1` 来判断是否是保护弹幕
+                                              #    @todo 用于最新的弹幕爬取算法
         )
     return list(map(_extractInfo, danmakuSeg.elems))
 
