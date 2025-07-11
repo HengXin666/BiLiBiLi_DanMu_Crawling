@@ -48,6 +48,7 @@ def deserializeNormalSegmentedPacketDanMaKu(data) -> list[tuple]:
     danmakuSeg = Danmaku.DmSegMobileReply()
     danmakuSeg.ParseFromString(data)
     def _extractInfo(it):
+        # print(it.content, XmlEscapeUtil.escape(it.content))
         # print(it)
         """
         // 弹幕条目
@@ -125,7 +126,7 @@ def getHistoricalDanMaKu(date: str, cid: int) -> list[tuple]:
 
 def getBasDanMaKu(cid: int) -> list[tuple]:
     """
-    获取BAS弹幕转包
+    获取BAS弹幕专包
     """
     url = f'https://api.bilibili.com/x/v2/dm/web/view?type=1&oid={cid}'
     data = requests.get(url, cookies=ReqDataSingleton().getAnyOneCookies(), headers=ReqDataSingleton().UserAgent, timeout=10)
