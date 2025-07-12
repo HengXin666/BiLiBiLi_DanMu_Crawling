@@ -1,0 +1,3 @@
+[submodule "cpp/libs/yalantinglibs"]
+	path = cpp/libs/yalantinglibs
+	url = https://github.com/alibaba/yalantinglibs.git
