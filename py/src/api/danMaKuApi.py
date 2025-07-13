@@ -76,7 +76,7 @@ class DanMaKuApi:
             'SESSDATA': random.choice(self._cookies)
         }
 
-    def deserializeDanMaKu(self, data) -> list[DanmakuElem]:
+    def _deserializeDanMaKu(self, data) -> list[DanmakuElem]:
         """
         反序列化 普通分段包弹幕
         """
@@ -105,7 +105,7 @@ class DanMaKuApi:
             headers=self._headers,
             timeout=self._timeout
         )
-        return self.deserializeDanMaKu(resp.content)
+        return self._deserializeDanMaKu(resp.content)
 
     def getBasDanMaKu(self, cid: int) -> list[tuple]:
         """
@@ -124,7 +124,7 @@ class DanMaKuApi:
         for i_url in target.specialDms:
             # 使用普通分段包弹幕的proto结构体反序列化此bin数据
             res.extend(
-                self.deserializeDanMaKu(
+                self._deserializeDanMaKu(
                     requests.get(
                         i_url, 
                         cookies=self._getAnyOneCookies(),
@@ -157,4 +157,4 @@ class DanMaKuApi:
             headers=self._headers,
             timeout=self._timeout
         )
-        return self.deserializeDanMaKu(resp.content)
+        return self._deserializeDanMaKu(resp.content)

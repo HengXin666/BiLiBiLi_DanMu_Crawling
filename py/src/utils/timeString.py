@@ -2,6 +2,15 @@ from datetime import datetime, timezone
 
 class TimeString:
     @staticmethod
+    def getLocalTimeStr() -> str:
+        """获取当前本地时间字符串
+
+        Returns:
+            str: %Y-%m-%d 格式
+        """
+        return datetime.now().strftime("%Y-%m-%d")
+
+    @staticmethod
     def timestampToStr(ts: int) -> str:
         """
         将 Unix 时间戳转换为 'YYYY-MM-DD' 格式字符串
