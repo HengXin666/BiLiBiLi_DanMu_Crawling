@@ -9,6 +9,15 @@ class TimeString:
             str: %Y-%m-%d 格式
         """
         return datetime.now().strftime("%Y-%m-%d")
+    
+    @staticmethod
+    def getLocalTimestamp() -> int:
+        """获取当前本地时间戳
+
+        Returns:
+            str: Unix 时间戳（秒）
+        """
+        return int(datetime.now().replace(tzinfo=timezone.utc).timestamp())
 
     @staticmethod
     def timestampToStr(ts: int) -> str:

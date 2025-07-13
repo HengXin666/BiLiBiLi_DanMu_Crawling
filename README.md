@@ -59,6 +59,7 @@ py 爬取流程: [使用后向爬取] https://github.com/HengXin666/BiLiBiLi_Dan
 
     总配置文件:
         仅记录 cookies (cookie 的 list)
+        爬取时间间隔区间 [int, int] (单位: 秒)
     
     所有内容记录在
         当前程序目录下(跨平台的), 的 reqData 文件夹

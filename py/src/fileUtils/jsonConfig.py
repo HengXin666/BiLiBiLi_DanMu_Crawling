@@ -4,10 +4,14 @@ from pathlib import Path
 from typing import List, Tuple
 import orjson
 
+from ..utils.singletonTemplate import Singleton
+from ..utils.basePath import BasePath
+
 class FetchStatus(str, Enum):
     """爬取状态, 标识当前弹幕爬取任务的进度和状态"""
     FetchingHistory = "爬取历史弹幕"
     PauseHistory = "暂停爬取历史弹幕"
+    FetchedHistoryOk = "爬取历史弹幕完成"
     BanHistory = "爬取历史弹幕被封禁中"
     FetchingRealtime = "正在爬取实时弹幕"
     PauseRealtime = "暂停爬取实时弹幕"
@@ -90,6 +94,8 @@ class MainConfig:
         cookies (List[str]): 凭证列表
     """
     cookies: List[str]
+    # 爬取间隔 [L, R]
+    timer: Tuple[int, int]
 
 class MainConfigManager:
     def __init__(self, path: Path):
@@ -97,17 +103,33 @@ class MainConfigManager:
         self.path = path
         if not self.path.exists():
             self.save(MainConfig(
-                cookies=[]
+                cookies=[],
+                timer=(6, 8)
             ))
 
     def load(self) -> MainConfig:
         """读取配置文件, 反序列化为 MainConfig 对象"""
         raw = orjson.loads(self.path.read_bytes())
         return MainConfig(
-            cookies=raw["cookies"]
+            cookies=raw["cookies"],
+            timer=raw["timer"]
         )
     
     def save(self, config: MainConfig):
         """将 MainConfig 对象序列化写入配置文件"""
         data = asdict(config)
         self.path.write_bytes(orjson.dumps(data, option=orjson.OPT_INDENT_2))
+
+DATA_PATH = "/reqData"
+
+@Singleton
+class GlobalConfig:
+    def __init__(self) -> None:
+        self._configManager = MainConfigManager(BasePath.relativePath(f"{DATA_PATH}/main_config.json"))
+        self._config = self._configManager.load()
+
+    def get(self) -> MainConfig:
+        return self._config
+    
+    def save(self) -> None:
+        self._configManager.save(self._config)

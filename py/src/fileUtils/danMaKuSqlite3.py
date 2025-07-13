@@ -1,6 +1,6 @@
 import sqlite3
 from pathlib import Path
-from typing import List, Set
+from typing import List
 
 from ..api.danMaKuApi import DanmakuElem, DmColorfulType
 
