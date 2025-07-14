@@ -1,5 +1,6 @@
 import Include
-from src.task.allDmReq import *
+from src.tasks.AllDmRequests import *
 
 if __name__ == '__main__':
-    AllDmReq.start()
+    # AllDmReq.start()
+    pass

@@ -120,16 +120,19 @@ class MainConfigManager:
         data = asdict(config)
         self.path.write_bytes(orjson.dumps(data, option=orjson.OPT_INDENT_2))
 
-DATA_PATH = "/reqData"
+DATA_PATH = "reqData"
 
 @Singleton
 class GlobalConfig:
     def __init__(self) -> None:
         self._configManager = MainConfigManager(BasePath.relativePath(f"{DATA_PATH}/main_config.json"))
-        self._config = self._configManager.load()
+        self._config: MainConfig = self._configManager.load()
 
     def get(self) -> MainConfig:
         return self._config
-    
+
+    def reRead(self) -> None:
+        self._configManager = MainConfigManager(BasePath.relativePath(f"{DATA_PATH}/main_config.json"))
+
     def save(self) -> None:
         self._configManager.save(self._config)

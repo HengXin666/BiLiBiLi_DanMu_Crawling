@@ -2,6 +2,9 @@
 *.pyc
 .venv/
 
+# 爬虫数据
+reqData/
+
 # 本地测试
 test.py
 
