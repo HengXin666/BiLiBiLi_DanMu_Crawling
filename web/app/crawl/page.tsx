@@ -138,8 +138,11 @@ export default function TaskManagerPage () {
       >
         <ModalContent className="flex flex-col h-[80vh]">
           <ModalHeader>新建任务</ModalHeader>
-          <ModalBody className="flex-1 overflow-auto">
-            <TaskAddPanel onSuccess={handleAddTaskSuccess} isInModal={true} />
+
+          <ModalBody className="flex-1 overflow-hidden">
+            <div className="h-full overflow-y-auto px-1">
+              <TaskAddPanel onSuccess={handleAddTaskSuccess} isInModal={true} />
+            </div>
           </ModalBody>
         </ModalContent>
       </Modal>

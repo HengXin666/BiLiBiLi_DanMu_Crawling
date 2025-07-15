@@ -138,8 +138,12 @@ export function TaskAddPanel ({ onSuccess, isInModal = false }: TaskAddPanelProp
     }
   };
 
-  return (
-    <Card className={isInModal ? "space-y-4 p-4 shadow-none bg-transparent" : "p-4 space-y-4"}>
+    return (
+    <Card
+      className={
+        isInModal ? "space-y-4 p-4 shadow-none bg-transparent" : "p-4 space-y-4"
+      }
+    >
       <Input
         label="任务名称"
         placeholder="请输入任务名称"
@@ -181,7 +185,6 @@ export function TaskAddPanel ({ onSuccess, isInModal = false }: TaskAddPanelProp
           爬取全弹幕
         </Checkbox>
 
-        {/* 垃圾报错 */}
         {!useDefaultRange && (
           <div className="flex gap-4">
             <DatePicker
@@ -207,6 +210,5 @@ export function TaskAddPanel ({ onSuccess, isInModal = false }: TaskAddPanelProp
       <Button color="primary" onPress={handleSetTaskConfig}>
         确定并初始化任务
       </Button>
-    </Card>
-  );
+    </Card>);
 }
