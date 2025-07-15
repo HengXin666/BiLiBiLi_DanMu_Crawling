@@ -1,4 +1,5 @@
 import asyncio
+from pathlib import Path
 import uuid
 from typing import List, Tuple
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -58,13 +59,24 @@ def getTaskConfig(cid: int):
     try:
         path = GlobalConfig()._tasksPathMap[cid]
         return ResponseModel.success(
-            TaskConfigManager(BasePath.relativePath(f"{path}/${cid}_task.config")).load()
+            TaskConfigManager(Path(f"{path}/{cid}_config.json")).load()
         )
     except:
         return ResponseModel.error(msg=f"该 cid = {cid} 的任务配置文件不存在")
 
 @allDmReqController.post("/setTaskConfig", response_model=ResponseModel[None])
-def setTaskConfig(config: VidoPartConfigVo):
+def setTaskConfig(config: TaskConfig):
+    try:
+        path = GlobalConfig()._tasksPathMap[config.cid]
+        taskConfigManager = TaskConfigManager(Path(
+            f"{path}/{config.cid}_config.json"))
+        taskConfigManager.save(config)
+        return ResponseModel.success()
+    except:
+        return ResponseModel.error()
+
+@allDmReqController.post("/initTaskConfig", response_model=ResponseModel[None])
+def initTaskConfig(config: VidoPartConfigVo):
     """初始化任务, 创建对应的文件
 
     Args:
@@ -84,7 +96,7 @@ def setTaskConfig(config: VidoPartConfigVo):
         return ResponseModel.success()
     except:
         return ResponseModel.error()
-    
+
 @allDmReqController.get("/getAllTaskData", response_model=ResponseModel[List[AllTaskDataVo]])
 def getAllTaskData():
     return ResponseModel.success(_getAllTaskData())

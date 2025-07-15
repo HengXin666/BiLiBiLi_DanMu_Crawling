@@ -116,7 +116,7 @@ export default function TaskManagerPage () {
     <div className="w-full flex flex-col flex-grow px-6 pt-8 relative">
       <h1 className={title()}>弹幕爬虫 | 任务管理</h1>
 
-      <TaskListPanel key={refreshKey} />
+      <TaskListPanel refreshKey={refreshKey} />
 
       {/* 右下角悬浮按钮 */}
       <Button
@@ -132,21 +132,17 @@ export default function TaskManagerPage () {
       <Modal
         isOpen={isAddTaskOpen}
         onOpenChange={setIsAddTaskOpen}
+        isDismissable={false}
         size="xl"
         className="max-w-4xl w-full"
-        hideCloseButton={false} // 保留关闭按钮
       >
-        <ModalContent>
-          <div className="flex flex-col h-[80vh] w-full">
-            <ModalHeader>新建任务</ModalHeader>
-
-            <div className="flex-1 overflow-y-auto px-6 pb-6">
-              <TaskAddPanel onSuccess={handleAddTaskSuccess} isInModal={true} />
-            </div>
-          </div>
+        <ModalContent className="flex flex-col h-[80vh]">
+          <ModalHeader>新建任务</ModalHeader>
+          <ModalBody className="flex-1 overflow-auto">
+            <TaskAddPanel onSuccess={handleAddTaskSuccess} isInModal={true} />
+          </ModalBody>
         </ModalContent>
       </Modal>
-
     </div>
   );
 }

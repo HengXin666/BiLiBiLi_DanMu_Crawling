@@ -5,6 +5,7 @@ import { Input, Button, CheckboxGroup, Checkbox, Card, DatePicker } from "@nextu
 import { toast } from "sonner";
 import { DateValue, getLocalTimeZone, today } from "@internationalized/date";
 import { BACKEND_URL } from "@/config/env";
+import { TaskDateRangePicker } from "./TaskDateRangePicker";
 
 interface VideoPart {
   cid: number;
@@ -33,9 +34,19 @@ export function TaskAddPanel({ onSuccess, isInModal = false }: TaskAddPanelProps
   const [parts, setParts] = useState<VideoPart[]>([]);
   const [selectedParts, setSelectedParts] = useState<number[]>([]);
 
-  const [useDefaultRange, setUseDefaultRange] = useState<boolean>(true);
+  const [useDefaultRange, setUseDefaultRange] = useState(true);
   const [startTime, setStartTime] = useState<DateValue>(today(getLocalTimeZone()));
   const [endTime, setEndTime] = useState<DateValue>(today(getLocalTimeZone()));
+
+  const handleRangeChange = (
+    newUseDefaultRange: boolean,
+    newStartTime: DateValue,
+    newEndTime: DateValue
+  ) => {
+    setUseDefaultRange(newUseDefaultRange);
+    setStartTime(newStartTime);
+    setEndTime(newEndTime);
+  };
 
   const handleFetchParts = async (): Promise<void> => {
     if (!urlOrCid.trim()) {
@@ -161,28 +172,12 @@ export function TaskAddPanel({ onSuccess, isInModal = false }: TaskAddPanelProps
         </CheckboxGroup>
       )}
 
-      <Checkbox isSelected={useDefaultRange} onValueChange={setUseDefaultRange}>
-        爬取全弹幕
-      </Checkbox>
-
-      {!useDefaultRange && (
-        <div className="flex gap-4">
-          <DatePicker
-            label="开始时间"
-            value={startTime}
-            onChange={setStartTime}
-            granularity="day"
-            isRequired
-          />
-          <DatePicker
-            label="结束时间"
-            value={endTime}
-            onChange={setEndTime}
-            granularity="day"
-            isRequired
-          />
-        </div>
-      )}
+      <TaskDateRangePicker
+        _useDefaultRange={useDefaultRange}
+        _startTime={startTime}
+        _endTime={endTime}
+        onChange={handleRangeChange}
+      />
 
       <Button color="primary" onPress={handleSetTaskConfig}>
         确定并初始化任务
