@@ -144,13 +144,16 @@ class GlobalConfig:
             dirPath = os.path.join(rootPath, dirName)
             if not os.path.isdir(dirPath):
                 continue
-
-            for fileName in os.listdir(dirPath):
-                # 匹配形如 {cid}_config.json 的文件
-                match = re.match(r"(\d+)_config\.json", fileName)
-                if match:
-                    cid = int(match.group(1))
-                    self._tasksPathMap[cid] = dirPath
+            for subDirName in os.listdir(dirPath):
+                subDirPath = os.path.join(dirPath, subDirName)
+                if not os.path.isdir(subDirPath):
+                    continue
+                for fileName in os.listdir(subDirPath):
+                    # 匹配形如 {cid}_config.json 的文件
+                    match = re.match(r"(\d+)_config\.json", fileName)
+                    if match:
+                        cid = int(match.group(1))
+                        self._tasksPathMap[cid] = subDirPath
 
     def addCidPathKV(self, cid: int, path: str) -> None:
         self._tasksPathMap[cid] = path

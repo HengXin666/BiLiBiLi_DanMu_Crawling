@@ -18,11 +18,16 @@ interface VidoPartConfigVo {
   range: [number, number];
 }
 
+interface TaskAddPanelProps {
+  onSuccess: () => void;
+  isInModal?: boolean;
+}
+
 function isValidTaskName(name: string): boolean {
   return !/[\/\\\*\?\<\>\|":]/.test(name);
 }
 
-export function TaskAddPanel({ onSuccess }: { onSuccess: () => void }) {
+export function TaskAddPanel({ onSuccess, isInModal = false }: TaskAddPanelProps) {
   const [taskName, setTaskName] = useState<string>("");
   const [urlOrCid, setUrlOrCid] = useState<string>("");
   const [parts, setParts] = useState<VideoPart[]>([]);
@@ -63,9 +68,14 @@ export function TaskAddPanel({ onSuccess }: { onSuccess: () => void }) {
       return [0, 0];
     }
 
+    const toBiliTimestamp = (year: number, month: number, day: number, hour: number, minute: number, second: number): number => {
+      // Date.UTC 返回的是 UTC 时间，B站使用东八区时间
+      return Math.floor(Date.UTC(year, month - 1, day, hour, minute, second) / 1000) - 8 * 3600;
+    };
+
     return [
-      Date.UTC(startTime.year, startTime.month - 1, startTime.day, 0, 0, 0) / 1000,
-      Date.UTC(endTime.year, endTime.month - 1, endTime.day, 23, 59, 59) / 1000,
+      toBiliTimestamp(startTime.year, startTime.month, startTime.day, 0, 0, 0),
+      toBiliTimestamp(endTime.year, endTime.month, endTime.day, 23, 59, 59),
     ];
   };
 
@@ -87,11 +97,17 @@ export function TaskAddPanel({ onSuccess }: { onSuccess: () => void }) {
 
     const range: [number, number] = convertRange();
 
+    // 替换 part.part 的非法字符
+    const sanitizePath = (input: string): string => {
+      return input.replace(/[\/\\\*\?\<\>\|":]/g, "_");
+    };
+
     try {
       for (const part of parts) {
         if (selectedParts.includes(part.cid)) {
+          const safePartName = sanitizePath(part.part);
           const config: VidoPartConfigVo = {
-            path: `${taskName}/${part.part}`,
+            path: `${taskName}/${safePartName}`,
             data: part,
             range,
           };
@@ -112,7 +128,7 @@ export function TaskAddPanel({ onSuccess }: { onSuccess: () => void }) {
   };
 
   return (
-    <Card className="p-4 space-y-4">
+    <Card className={isInModal ? "space-y-4 p-4 shadow-none bg-transparent" : "p-4 space-y-4"}>
       <Input
         label="任务名称"
         placeholder="请输入任务名称"

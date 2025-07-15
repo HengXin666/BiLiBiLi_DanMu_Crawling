@@ -1,10 +1,5 @@
 "use client";
 
-import { title } from "@/components/primitives";
-import { useEffect, useState } from "react";
-import { TaskAddPanel } from "./TaskAddPanel";
-import { TaskListPanel } from "./TaskListPanel";
-
 /**
  * 需求:
  * 1. 添加爬虫任务:
@@ -98,22 +93,61 @@ import { TaskListPanel } from "./TaskListPanel";
             allDmReqManager._clients[taskId].remove(ws)
  */
 
-export default function CrawlPage() {
-  const [refreshKey, setRefreshKey] = useState(0);
 
-  // useEffect(() => {
-  //   const ws = new WebSocket(`ws://localhost:28299/allDm/ws/${taskId}`);
-  //   ws.onmessage = (e) => {
-  //     // 更新状态，实时显示
-  //   };
-  //   return () => ws.close();
-  // }, [taskId]);
+"use client";
+
+import { useState } from "react";
+import { title } from "@/components/primitives";
+import { TaskAddPanel } from "./TaskAddPanel";
+import { TaskListPanel } from "./TaskListPanel";
+import { Button, Modal, ModalBody, ModalContent, ModalHeader } from "@nextui-org/react";
+import { Plus } from "lucide-react";
+
+export default function TaskManagerPage () {
+  const [refreshKey, setRefreshKey] = useState<number>(0);
+  const [isAddTaskOpen, setIsAddTaskOpen] = useState<boolean>(false);
+
+  const handleAddTaskSuccess = () => {
+    setRefreshKey((k) => k + 1);
+    setIsAddTaskOpen(false);
+  };
 
   return (
-    <div className="space-y-4">
+    <div className="w-full flex flex-col flex-grow px-6 pt-8 relative">
       <h1 className={title()}>弹幕爬虫 | 任务管理</h1>
-      <TaskAddPanel onSuccess={() => setRefreshKey((k) => k + 1)} />
+
       <TaskListPanel key={refreshKey} />
+
+      {/* 右下角悬浮按钮 */}
+      <Button
+        color="primary"
+        isIconOnly={false}
+        className="fixed bottom-8 right-8 z-50 shadow-xl rounded-full px-6 py-4 text-base"
+        onPress={() => setIsAddTaskOpen(true)}
+        startContent={<Plus size={20} />}
+      >
+        新建任务
+      </Button>
+
+      <Modal
+        isOpen={isAddTaskOpen}
+        onOpenChange={setIsAddTaskOpen}
+        size="xl"
+        className="max-w-4xl w-full"
+        hideCloseButton={false} // 保留关闭按钮
+      >
+        <ModalContent>
+          <div className="flex flex-col h-[80vh] w-full">
+            <ModalHeader>新建任务</ModalHeader>
+
+            <div className="flex-1 overflow-y-auto px-6 pb-6">
+              <TaskAddPanel onSuccess={handleAddTaskSuccess} isInModal={true} />
+            </div>
+          </div>
+        </ModalContent>
+      </Modal>
+
     </div>
   );
 }
+

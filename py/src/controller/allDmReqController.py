@@ -4,12 +4,14 @@ from typing import List, Tuple
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 
+from ..pojo.vo.AllTaskDataVo import AllTaskDataVo
 from ..utils.basePath import BasePath
 from ..utils.timeString import TimeString
 from ..fileUtils.jsonConfig import DATA_PATH, GlobalConfig, TaskConfig, TaskConfigManager
 from ..api.videoApi import VideoPart
 from ..tasks.AllDmRequests import AllDmRequests
 from ..pojo.vo.ResponseModel import ResponseModel
+from ..fileUtils.allTaskData import getAllTaskData as _getAllTaskData
 
 allDmReqController = APIRouter(prefix="/allDm")
 allDmReqManager = AllDmRequests()
@@ -22,12 +24,6 @@ class VidoPartConfigVo(BaseModel):
     data: VideoPart
     range: Tuple[int, int] # 爬取范围时间戳
                            # 0 表示默认, 即 [0, 0] 表示 从当前爬取到不能爬取
-
-class AllTaskData:
-    # 标题
-    mainTitle: str
-    # 子任务
-    tasks: List[TaskConfig]
 
 @allDmReqController.post("/startTask", response_model=ResponseModel[dict])
 async def startTask(startTask: StartTaskVo):
@@ -88,3 +84,7 @@ def setTaskConfig(config: VidoPartConfigVo):
         return ResponseModel.success()
     except:
         return ResponseModel.error()
+    
+@allDmReqController.get("/getAllTaskData", response_model=ResponseModel[List[AllTaskDataVo]])
+def getAllTaskData():
+    return ResponseModel.success(_getAllTaskData())
