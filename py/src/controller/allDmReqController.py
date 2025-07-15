@@ -26,6 +26,9 @@ class VidoPartConfigVo(BaseModel):
     range: Tuple[int, int] # 爬取范围时间戳
                            # 0 表示默认, 即 [0, 0] 表示 从当前爬取到不能爬取
 
+class TaskIdVo(BaseModel):
+    taskId: str
+
 @allDmReqController.post("/startTask", response_model=ResponseModel[dict])
 async def startTask(startTask: StartTaskVo):
     taskId = str(uuid.uuid4())
@@ -37,9 +40,9 @@ async def startTask(startTask: StartTaskVo):
     })
 
 @allDmReqController.post("/stopTask", response_model=ResponseModel[None])
-async def stopTask(taskId: str):
+async def stopTask(json: TaskIdVo):
     try:
-        allDmReqManager._taskData[taskId].isRun = False
+        allDmReqManager._taskData[json.taskId].isRun = False
         return ResponseModel.success()
     except:
         return ResponseModel.error(msg="taskId does not exist")

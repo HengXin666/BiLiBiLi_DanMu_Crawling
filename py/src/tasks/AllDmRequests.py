@@ -63,6 +63,7 @@ class AllDmRequests:
             cid (int): 视频cid
             path (str): 爬取数据存放路径
         """
+        print("开始", taskId, cid)
         path = GlobalConfig()._tasksPathMap[cid]
 
         # 记录协程任务数据
@@ -78,14 +79,14 @@ class AllDmRequests:
         wsClis = self._clients[taskId]
 
         # 创建 & 读取 配置
-        taskConfigManager = TaskConfigManager(BasePath.relativePath(f"{path}/{cid}_config.json"))
+        taskConfigManager = TaskConfigManager(Path(f"{path}/{cid}_config.json"))
         taskConfig = taskConfigManager.load()
         taskConfig.status = FetchStatus.FetchingHistory
 
-        danmakuIdStorage = DanmakuIdStorage(BasePath.relativePath(f"{path}/{cid}_dm_id.db"))
+        danmakuIdStorage = DanmakuIdStorage(Path(f"{path}/{cid}_dm_id.db"))
         idSet = danmakuIdStorage.selectAllDmOnlyId()
 
-        danmakuElemStorage = DanmakuElemStorage(BasePath.relativePath(f"{path}/{cid}_dm_data.db"))
+        danmakuElemStorage = DanmakuElemStorage(Path(f"{path}/{cid}_dm_data.db"))
 
         while self._taskData[taskId].isRun:
             addDm = []

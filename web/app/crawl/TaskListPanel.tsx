@@ -18,6 +18,8 @@ interface AllTaskData {
   tasks: TaskConfig[];
 }
 
+let taskIdCidMap: Map<number, string> = new Map<number, string>();
+
 export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
   const [taskList, setTaskList] = useState<AllTaskData[]>([]);
   const [taskAddMap, setTaskAddMap] = useState<Record<number, number>>({});
@@ -62,16 +64,21 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
 
   // 启动任务
   const handleStart = async (task: TaskConfig, mainTitle: string) => {
-    await fetch(`${BACKEND_URL}/allDm/startTask`, {
+    const res = await fetch(`${BACKEND_URL}/allDm/startTask`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ cid: task.cid, path: `${mainTitle}/${task.title}` }),
     });
 
+    const taskId = (await res.json()).data.taskId;
+
+    taskIdCidMap.set(task.cid, taskId);
+
     // WebSocket监听弹幕增量
     const ws = new WebSocket(
-      `${BACKEND_URL.replace(/^http/, "ws")}/allDm/ws/${task.cid}`
+      `${BACKEND_URL.replace(/^http/, "ws")}/allDm/ws/${taskId}`
     );
+
     ws.onmessage = (event) => {
       const addCount = Number(event.data);
       setTaskAddMap((prev) => ({
@@ -88,8 +95,9 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
     await fetch(`${BACKEND_URL}/allDm/stopTask`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(task.cid),
+      body: JSON.stringify(taskIdCidMap.get(task.cid)),
     });
+    taskIdCidMap.delete(task.cid);
     fetchTasks();
   };
 
