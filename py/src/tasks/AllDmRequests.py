@@ -55,7 +55,7 @@ class AllDmRequests:
         for cli in removeList:
             clis.remove(cli)
 
-    async def run(self, taskId: str, cid: int, path: str):
+    async def run(self, taskId: str, cid: int):
         """开始爬取历史弹幕
 
         Args:
@@ -63,6 +63,8 @@ class AllDmRequests:
             cid (int): 视频cid
             path (str): 爬取数据存放路径
         """
+        path = GlobalConfig()._tasksPathMap[cid]
+
         # 记录协程任务数据
         self._taskData[taskId] = AllDmRequests.TaskData(
             cid=cid,

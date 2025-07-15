@@ -5,11 +5,13 @@ import uvicorn
 
 from src.controller.allDmReqController import allDmReqController
 from src.controller.mainConfigController import mainConfigController
+from src.controller.videoInfoController import videoInfoController
 
 app = FastAPI()
 
 app.include_router(allDmReqController)
 app.include_router(mainConfigController)
+app.include_router(videoInfoController)
 
 app.add_middleware(
     CORSMiddleware,

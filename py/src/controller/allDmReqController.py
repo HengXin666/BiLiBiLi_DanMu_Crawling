@@ -1,23 +1,39 @@
 import asyncio
 import uuid
+from typing import List, Tuple
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 
+from ..utils.basePath import BasePath
+from ..utils.timeString import TimeString
+from ..fileUtils.jsonConfig import DATA_PATH, GlobalConfig, TaskConfig, TaskConfigManager
+from ..api.videoApi import VideoPart
 from ..tasks.AllDmRequests import AllDmRequests
 from ..pojo.vo.ResponseModel import ResponseModel
 
 allDmReqController = APIRouter(prefix="/allDm")
 allDmReqManager = AllDmRequests()
 
-class StartTask(BaseModel):
+class StartTaskVo(BaseModel):
     cid: int
+
+class VidoPartConfigVo(BaseModel):
     path: str
+    data: VideoPart
+    range: Tuple[int, int] # 爬取范围时间戳
+                           # 0 表示默认, 即 [0, 0] 表示 从当前爬取到不能爬取
+
+class AllTaskData:
+    # 标题
+    mainTitle: str
+    # 子任务
+    tasks: List[TaskConfig]
 
 @allDmReqController.post("/startTask", response_model=ResponseModel[dict])
-async def startTask(startTask: StartTask):
+async def startTask(startTask: StartTaskVo):
     taskId = str(uuid.uuid4())
-    allDmReqManager._clients[taskId] = set()  # 先初始化客户端池
-    task = asyncio.create_task(allDmReqManager.run(taskId, startTask.cid, startTask.path))
+    allDmReqManager._clients[taskId] = set() # 先初始化客户端池
+    task = asyncio.create_task(allDmReqManager.run(taskId, startTask.cid))
     allDmReqManager._tasks[taskId] = task
     return ResponseModel.success({
         "taskId": taskId
@@ -40,3 +56,35 @@ async def taskState(ws: WebSocket, taskId: str):
             await asyncio.sleep(60 * 60) # 保持连接, 心跳可选
     except WebSocketDisconnect:
         allDmReqManager._clients[taskId].remove(ws)
+
+@allDmReqController.get("/getTaskConfig/{cid}", response_model=ResponseModel[TaskConfig])
+def getTaskConfig(cid: int):
+    try:
+        path = GlobalConfig()._tasksPathMap[cid]
+        return ResponseModel.success(
+            TaskConfigManager(BasePath.relativePath(f"{path}/${cid}_task.config")).load()
+        )
+    except:
+        return ResponseModel.error(msg=f"该 cid = {cid} 的任务配置文件不存在")
+
+@allDmReqController.post("/setTaskConfig", response_model=ResponseModel[None])
+def setTaskConfig(config: VidoPartConfigVo):
+    """初始化任务, 创建对应的文件
+
+    Args:
+        config (VidoPartConfigVo): 配置
+    """
+    try:
+        taskConfigManager = TaskConfigManager(BasePath.relativePath(
+            f"{DATA_PATH}/{config.path}/{config.data.cid}_config.json"))
+
+        taskConfig = taskConfigManager.load()
+        taskConfig.cid = config.data.cid
+        taskConfig.title = config.data.part
+        taskConfig.range = config.range
+        taskConfig.lastFetchTime = TimeString.getLocalTimestamp()
+        taskConfigManager.save(taskConfig)
+        GlobalConfig().addCidPathKV(taskConfig.cid, f"{DATA_PATH}/{config.path}")
+        return ResponseModel.success()
+    except:
+        return ResponseModel.error()

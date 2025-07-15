@@ -1,6 +1,8 @@
 from enum import Enum
 from dataclasses import dataclass, asdict
+import os
 from pathlib import Path
+import re
 from typing import List, Tuple
 import orjson
 
@@ -25,7 +27,7 @@ class TaskConfig:
     Attributes:
         cid (int): 视频唯一标识符
         title (str): 爬取的视频标题
-        lastFetchTime (int): 上次爬取时间, Unix 时间戳(秒)
+        lastFetchTime (int): 上次执行时间, Unix 时间戳(秒)
         range (Tuple[int, int]): 爬取时间范围(左边界, 右边界), Unix 时间戳(秒)
         currentTime (int): 当前爬取的时间点, Unix 时间戳(秒)
         totalDanmaku (int): 爬取到的弹幕总数
@@ -127,6 +129,31 @@ class GlobalConfig:
     def __init__(self) -> None:
         self._configManager = MainConfigManager(BasePath.relativePath(f"{DATA_PATH}/main_config.json"))
         self._config: MainConfig = self._configManager.load()
+        
+        # 所有爬取任务的路径map: {cid : path}
+        self._tasksPathMap: dict[int, str] = dict()
+
+        self._initTasksPathMap()
+
+    def _initTasksPathMap(self) -> None:
+        rootPath = BasePath.relativePath(f"{DATA_PATH}/")
+        # 遍历 DATA_PATH 下的文件夹
+        # 的文件夹, 里面有 ${path}/${cid}_config.json
+        # 加入 self._tasksPathMap {cid : path}
+        for dirName in os.listdir(rootPath):
+            dirPath = os.path.join(rootPath, dirName)
+            if not os.path.isdir(dirPath):
+                continue
+
+            for fileName in os.listdir(dirPath):
+                # 匹配形如 {cid}_config.json 的文件
+                match = re.match(r"(\d+)_config\.json", fileName)
+                if match:
+                    cid = int(match.group(1))
+                    self._tasksPathMap[cid] = dirPath
+
+    def addCidPathKV(self, cid: int, path: str) -> None:
+        self._tasksPathMap[cid] = path
 
     def get(self) -> MainConfig:
         return self._config

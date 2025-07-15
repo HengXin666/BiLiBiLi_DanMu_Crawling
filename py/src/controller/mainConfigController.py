@@ -6,7 +6,7 @@ from ..fileUtils.jsonConfig import GlobalConfig, MainConfig
 
 mainConfigController = APIRouter(prefix="/mainConfig")
 
-class GlobalConfigJson(BaseModel, MainConfig):
+class GlobalConfigVo(BaseModel, MainConfig):
     pass
 
 @mainConfigController.get("/getConfig", response_model=ResponseModel[dict])
@@ -16,7 +16,7 @@ def getConfig():
     )
 
 @mainConfigController.post("/setConfig", response_class=ResponseModel[None])
-def setConfig(config: GlobalConfigJson):
+def setConfig(config: GlobalConfigVo):
     GlobalConfig()._config = config
     GlobalConfig().save()
     return ResponseModel.success()

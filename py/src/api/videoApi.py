@@ -92,12 +92,14 @@ class VideoApi:
         data = resp.json()
         res: List[VideoPart] = []
         try:
+            cnt = 0
             for it in data['result']['episodes']:
                 res.append(VideoPart(
                     cid=it['cid'],
-                    page=0,
+                    page=cnt,
                     part=it['share_copy']
                 ))
+                cnt += 1
         finally:
             return data['code'], res
 
@@ -125,6 +127,7 @@ class VideoApi:
         try:
             bv = CidUtils.extractBv(url)
             anime = CidUtils.extractANiMe(url)
+            enterTheCidManually = CidUtils.extractCid(url)
             if (bv != None):
                 # 解析普通视频
                 return VideoApi._getVideoInfo(bv)
@@ -137,6 +140,12 @@ class VideoApi:
                     ssId=anime['ssId'],
                     epId=anime['epId']
                 )
+            elif (enterTheCidManually != None):
+                return (0, [VideoPart(
+                    cid=int(enterTheCidManually),
+                    page=0,
+                    part="仅输入cid无法获取标题"
+                )])
         except:
             pass
         return (-1, [])

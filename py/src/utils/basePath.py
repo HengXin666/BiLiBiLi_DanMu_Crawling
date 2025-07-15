@@ -18,6 +18,6 @@ class BasePath:
     def relativePath(relative: str | Path) -> Path:
         relative = Path(relative)
         if relative.is_absolute():
-            raise ValueError(f"relativePath 只能传相对路径，收到: {relative}")
+            raise ValueError(f"relativePath 只能传相对路径; 却收到: {relative}")
         path = BasePath._getAppRoot() / relative
         return path.resolve()

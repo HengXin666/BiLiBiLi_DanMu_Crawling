@@ -2,6 +2,13 @@ import re
 
 class CidUtils:
     @staticmethod
+    def extractCid(text: str) -> str | None:
+        res = re.search(r"cid=(\d+)", text, re.IGNORECASE)
+        if res:
+            return res.group(1)
+        return None
+    
+    @staticmethod
     def extractBv(text: str) -> str | None:
         """
         从输入框, 提取AV或者BV号
