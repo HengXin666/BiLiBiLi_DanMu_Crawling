@@ -10,8 +10,10 @@ import {
   Button,
   Spinner,
   Input,
+  Checkbox,
+  DatePicker,
 } from "@nextui-org/react";
-import { DateValue, getLocalTimeZone, today } from "@internationalized/date";
+import { CalendarDate, DateValue, getLocalTimeZone, today } from "@internationalized/date";
 import { TaskDateRangePicker } from "./TaskDateRangePicker";
 
 export interface TaskConfig {
@@ -36,11 +38,7 @@ interface TaskConfigModalProps {
 function toDateValue (timestamp: number): DateValue | null {
   if (timestamp === 0) return null;
   const dt = new Date(timestamp * 1000);
-  return {
-    year: dt.getFullYear(),
-    month: dt.getMonth() + 1,
-    day: dt.getDate(),
-  };
+  return new CalendarDate(dt.getFullYear(), dt.getMonth() + 1, dt.getDate());
 }
 
 function toTimestamp (date: DateValue | null, isEnd: boolean = false): number {
@@ -49,31 +47,31 @@ function toTimestamp (date: DateValue | null, isEnd: boolean = false): number {
   return ts - 8 * 3600;
 }
 
-export function TaskConfigModal ({
+export interface TaskConfig {
+  cid: number;
+  title: string;
+  range: [number, number];
+}
+
+export const TaskConfigModal: React.FC<TaskConfigModalProps> = ({
   isOpen,
   loading,
   configData,
   onClose,
   onSave,
-}: TaskConfigModalProps) {
+}) => {
   const [title, setTitle] = useState("");
+  const [useDefaultRange, setUseDefaultRange] = useState(true);
   const [startTime, setStartTime] = useState<DateValue>(today(getLocalTimeZone()));
   const [endTime, setEndTime] = useState<DateValue>(today(getLocalTimeZone()));
-  const [useDefaultRange, setUseDefaultRange] = useState(true);
-
-  const handleRangeChange = (
-    newStartTime: DateValue,
-    newEndTime: DateValue
-  ) => {
-    setStartTime(newStartTime);
-    setEndTime(newEndTime);
-  };
 
   useEffect(() => {
-    setTitle(configData?.title || "");
-    setStartTime(toDateValue(configData?.range[0] || 0) || today(getLocalTimeZone()));
-    setEndTime(toDateValue(configData?.range[1] || 0) || today(getLocalTimeZone()));
-    setUseDefaultRange(configData?.range[0] === configData?.range[1] && configData?.range[0] === 0);
+    if (!configData) return;
+    const [startTs, endTs] = configData.range;
+    setTitle(configData.title);
+    setUseDefaultRange(startTs === 0 && endTs === 0);
+    setStartTime(toDateValue(startTs) ?? today(getLocalTimeZone()));
+    setEndTime(toDateValue(endTs) ?? today(getLocalTimeZone()));
   }, [configData]);
 
   const handleSaveClick = async () => {
@@ -81,12 +79,7 @@ export function TaskConfigModal ({
     const newRange: [number, number] = useDefaultRange
       ? [0, 0]
       : [toTimestamp(startTime, false), toTimestamp(endTime, true)];
-    const newConfig: TaskConfig = {
-      ...configData,
-      title,
-      range: newRange,
-    };
-    await onSave(newConfig);
+    await onSave({ ...configData, title, range: newRange });
   };
 
   return (
@@ -100,12 +93,37 @@ export function TaskConfigModal ({
             <div className="space-y-4">
               <div>cid: {configData.cid}</div>
               <Input label="标题" value={title} onChange={e => setTitle(e.target.value)} fullWidth />
-              <TaskDateRangePicker
-                _useDefaultRange={useDefaultRange}
-                _startTime={startTime}
-                _endTime={endTime}
-                onChange={handleRangeChange}
-              />
+              <div className="flex flex-col gap-3">
+                <Checkbox
+                  isSelected={useDefaultRange}
+                  onChange={(e) => setUseDefaultRange(e.target.checked)}
+                  size="md"
+                >
+                  爬取全弹幕
+                </Checkbox>
+
+                {/* 垃圾报错 */}
+                {!useDefaultRange && (
+                  <div className="flex gap-4">
+                    <DatePicker
+                      label="开始时间"
+                      value={startTime}
+                      onChange={setStartTime}
+                      granularity="day"
+                      isRequired
+                      className="flex-grow"
+                    />
+                    <DatePicker
+                      label="结束时间"
+                      value={endTime}
+                      onChange={setEndTime}
+                      granularity="day"
+                      isRequired
+                      className="flex-grow"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </ModalBody>
@@ -118,4 +136,4 @@ export function TaskConfigModal ({
       </ModalContent>
     </Modal>
   );
-}
+};

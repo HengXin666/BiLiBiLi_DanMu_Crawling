@@ -118,7 +118,6 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
     fetchTasks();
   };
 
-
   return (
     <div className="space-y-4">
       <Accordion>
@@ -187,6 +186,7 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
 
       {/* 任务配置管理弹窗 */}
       <TaskConfigModal
+        key={taskConfigData?.cid || 0}
         isOpen={isConfigModalOpen}
         loading={loadingConfig}
         configData={taskConfigData}

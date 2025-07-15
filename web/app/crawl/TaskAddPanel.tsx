@@ -24,11 +24,11 @@ interface TaskAddPanelProps {
   isInModal?: boolean;
 }
 
-function isValidTaskName(name: string): boolean {
+function isValidTaskName (name: string): boolean {
   return !/[\/\\\*\?\<\>\|":]/.test(name);
 }
 
-export function TaskAddPanel({ onSuccess, isInModal = false }: TaskAddPanelProps) {
+export function TaskAddPanel ({ onSuccess, isInModal = false }: TaskAddPanelProps) {
   const [taskName, setTaskName] = useState<string>("");
   const [urlOrCid, setUrlOrCid] = useState<string>("");
   const [parts, setParts] = useState<VideoPart[]>([]);
@@ -172,12 +172,37 @@ export function TaskAddPanel({ onSuccess, isInModal = false }: TaskAddPanelProps
         </CheckboxGroup>
       )}
 
-      <TaskDateRangePicker
-        _useDefaultRange={useDefaultRange}
-        _startTime={startTime}
-        _endTime={endTime}
-        onChange={handleRangeChange}
-      />
+      <div className="flex flex-col gap-3">
+        <Checkbox
+          isSelected={useDefaultRange}
+          onChange={(e) => setUseDefaultRange(e.target.checked)}
+          size="md"
+        >
+          爬取全弹幕
+        </Checkbox>
+
+        {/* 垃圾报错 */}
+        {!useDefaultRange && (
+          <div className="flex gap-4">
+            <DatePicker
+              label="开始时间"
+              value={startTime}
+              onChange={setStartTime}
+              granularity="day"
+              isRequired
+              className="flex-grow"
+            />
+            <DatePicker
+              label="结束时间"
+              value={endTime}
+              onChange={setEndTime}
+              granularity="day"
+              isRequired
+              className="flex-grow"
+            />
+          </div>
+        )}
+      </div>
 
       <Button color="primary" onPress={handleSetTaskConfig}>
         确定并初始化任务
