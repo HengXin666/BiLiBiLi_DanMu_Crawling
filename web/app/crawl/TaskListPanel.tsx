@@ -1,17 +1,17 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Accordion,
   AccordionItem,
   Card,
   Button,
-  Progress,
-  Spinner,
+  ScrollShadow,
 } from "@nextui-org/react";
-import { DateTime } from "luxon";
 import { BACKEND_URL } from "@/config/env";
 import { TaskConfigModal, TaskConfig } from "./TaskConfigModal";
+import { DateTime } from "luxon";
+import { ExportXmlModal } from "./ExportXmlModal";
 
 interface AllTaskData {
   mainTitle: string;
@@ -19,16 +19,32 @@ interface AllTaskData {
 }
 
 let taskIdCidMap: Map<number, string> = new Map<number, string>();
+interface LogEntry {
+  time: string;
+  message: string;
+}
 
-export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
+export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
   const [taskList, setTaskList] = useState<AllTaskData[]>([]);
-  const [taskAddMap, setTaskAddMap] = useState<Record<number, number>>({});
+  const [logMap, setLogMap] = useState<Record<number, LogEntry[]>>({});
+  const [logOpenMap, setLogOpenMap] = useState<Record<number, boolean>>({});
   const [loadingConfig, setLoadingConfig] = useState(false);
 
   const [taskConfigData, setTaskConfigData] = useState<TaskConfig | null>(null);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
 
-  // 拉取任务列表
+  const wsMap = useRef<Record<number, WebSocket>>({});
+
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportCid, setExportCid] = useState<number>(0);
+  const [exportFileName, setExportFileName] = useState<string>("");
+
+  const handleOpenExport = (cid: number, title: string) => {
+    setExportCid(cid);
+    setExportFileName(title);
+    setIsExportModalOpen(true);
+  };
+
   const fetchTasks = async () => {
     const res = await fetch(`${BACKEND_URL}/allDm/getAllTaskData`);
     const json = await res.json();
@@ -62,7 +78,18 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
     }
   };
 
-  // 启动任务
+  const appendLog = (cid: number, message: string) => {
+    setLogMap((prev) => {
+      const time = DateTime.local().toFormat("HH:mm:ss");
+      const newLog: LogEntry = { time, message };
+      const prevLogs = prev[cid] || [];
+      return {
+        ...prev,
+        [cid]: [...prevLogs.slice(-49), newLog], // 保留最多50条
+      };
+    });
+  };
+
   const handleStart = async (task: TaskConfig, mainTitle: string) => {
     const res = await fetch(`${BACKEND_URL}/allDm/startTask`, {
       method: "POST",
@@ -71,37 +98,38 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
     });
 
     const taskId = (await res.json()).data.taskId;
-
     taskIdCidMap.set(task.cid, taskId);
 
-    // WebSocket监听弹幕增量
     const ws = new WebSocket(
       `${BACKEND_URL.replace(/^http/, "ws")}/allDm/ws/${taskId}`
     );
 
     ws.onmessage = (event) => {
-      const addCount = Number(event.data);
-      setTaskAddMap((prev) => ({
-        ...prev,
-        [task.cid]: (prev[task.cid] || 0) + addCount,
-      }));
+      appendLog(task.cid, event.data);
     };
+
+    wsMap.current[task.cid] = ws;
 
     fetchTasks();
   };
 
-  // 暂停任务
   const handleStop = async (task: TaskConfig) => {
     await fetch(`${BACKEND_URL}/allDm/stopTask`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(taskIdCidMap.get(task.cid)),
     });
+
     taskIdCidMap.delete(task.cid);
+
+    if (wsMap.current[task.cid]) {
+      wsMap.current[task.cid].close();
+      delete wsMap.current[task.cid];
+    }
+
     fetchTasks();
   };
 
-  // 打开任务配置管理弹窗
   const handleOpenConfig = async (cid: number) => {
     setLoadingConfig(true);
     setIsConfigModalOpen(true);
@@ -114,7 +142,6 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
     }
   };
 
-  // 保存任务配置
   const handleSaveTaskConfig = async (newConfig: TaskConfig) => {
     await fetch(`${BACKEND_URL}/allDm/setTaskConfig`, {
       method: "POST",
@@ -126,6 +153,13 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
     fetchTasks();
   };
 
+  const toggleLogOpen = (cid: number) => {
+    setLogOpenMap((prev) => ({
+      ...prev,
+      [cid]: !prev[cid],
+    }));
+  };
+
   return (
     <div className="space-y-4">
       <Accordion>
@@ -134,55 +168,55 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
             {t.tasks.map((task) => (
               <Card key={task.cid} className="p-4 mb-2">
                 <div className="flex justify-between items-start">
-                  <div className="text-left space-y-1">
+                  <div className="text-left space-y-1 w-3/4">
                     <div>
                       <strong>爬取:</strong> {task.title} ({task.cid})
                     </div>
                     <div>
-                      <strong>爬取数据:</strong> {task.totalDanmaku} 条 (+
-                      {taskAddMap[task.cid] || 0}) | 神弹幕:{" "}
-                      {task.advancedDanmaku}
+                      <strong>数据:</strong> {task.totalDanmaku} 条 | 神弹幕: {task.advancedDanmaku}
                     </div>
                     <div>
-                      <strong>当前进度:</strong> {formatTimestamp(task.currentTime)} /{" "}
-                      {formatTimestamp(task.range[1])}
+                      <strong>进度:</strong> {formatTimestamp(task.currentTime)} / {formatTimestamp(task.range[1])}
                     </div>
                     <div>
                       <strong>上次执行:</strong> {formatTimestamp(task.lastFetchTime)}
                     </div>
-                    <Progress
-                      value={
-                        ((task.currentTime - task.range[0]) /
-                          (task.range[1] - task.range[0])) *
-                        100
-                      }
-                      className="mt-1"
-                    />
+                    <div className="mt-2 border rounded p-2 bg-black text-green-400 text-xs font-mono max-h-40 overflow-y-auto cursor-pointer"
+                      onClick={() => toggleLogOpen(task.cid)}>
+                      {logOpenMap[task.cid]
+                        ? (
+                          <ScrollShadow hideScrollBar className="max-h-40">
+                            {logMap[task.cid]?.map((log, idx) => (
+                              <div key={idx}>
+                                [{log.time}] {log.message}
+                              </div>
+                            )) || <div>暂无日志</div>}
+                          </ScrollShadow>
+                        ) : (
+                          <div>
+                            {logMap[task.cid]?.length
+                              ? `[${logMap[task.cid][logMap[task.cid].length - 1].time}] ${logMap[task.cid][logMap[task.cid].length - 1].message}`
+                              : "暂无日志 (点击展开)"}
+                          </div>
+                        )}
+                    </div>
                   </div>
-                  <div className="flex flex-col items-end space-y-1">
+
+                  <div className="flex flex-col items-end space-y-1 w-1/4">
                     <div className={`font-bold ${getStatusColor(task.status)}`}>
                       {task.status}
                     </div>
-                    <Button
-                      size="sm"
-                      color="primary"
-                      onPress={() => handleStart(task, t.mainTitle)}
-                    >
+                    <Button size="sm" color="primary" onPress={() => handleStart(task, t.mainTitle)}>
                       运行
                     </Button>
-                    <Button
-                      size="sm"
-                      color="warning"
-                      onPress={() => handleStop(task)}
-                    >
+                    <Button size="sm" color="warning" onPress={() => handleStop(task)}>
                       暂停
                     </Button>
-                    <Button
-                      size="sm"
-                      color="secondary"
-                      onPress={() => handleOpenConfig(task.cid)}
-                    >
-                      管理配置
+                    <Button size="sm" color="secondary" onPress={() => handleOpenConfig(task.cid)}>
+                      配置
+                    </Button>
+                    <Button size="sm" color="default" onPress={() => handleOpenExport(task.cid, task.title)}>
+                      导出弹幕
                     </Button>
                   </div>
                 </div>
@@ -192,7 +226,13 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
         ))}
       </Accordion>
 
-      {/* 任务配置管理弹窗 */}
+      <ExportXmlModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        cid={exportCid}
+        defaultFileName={exportFileName}
+      />
+
       <TaskConfigModal
         key={taskConfigData?.cid || 0}
         isOpen={isConfigModalOpen}

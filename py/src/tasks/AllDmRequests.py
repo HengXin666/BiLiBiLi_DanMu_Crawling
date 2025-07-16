@@ -64,6 +64,7 @@ class AllDmRequests:
             path (str): 爬取数据存放路径
         """
         print("开始", taskId, cid)
+        
         path = GlobalConfig()._tasksPathMap[cid]
 
         # 记录协程任务数据
@@ -78,6 +79,10 @@ class AllDmRequests:
 
         wsClis = self._clients[taskId]
 
+        print("发生开始信息")
+        await self._allClientsDo(
+            wsClis, lambda ws: ws.send_text(f"开始任务 {taskId}"))
+
         # 创建 & 读取 配置
         taskConfigManager = TaskConfigManager(Path(f"{path}/{cid}_config.json"))
         taskConfig = taskConfigManager.load()
@@ -87,6 +92,9 @@ class AllDmRequests:
         idSet = danmakuIdStorage.selectAllDmOnlyId()
 
         danmakuElemStorage = DanmakuElemStorage(Path(f"{path}/{cid}_dm_data.db"))
+
+        # 注意, 如果首尾出现 0, 我们需要手动处理
+        taskConfig.activation() # 也就是活化一下数据, 但是这样前端展示的就是具体时间了哦
 
         while self._taskData[taskId].isRun:
             addDm = []
@@ -122,6 +130,7 @@ class AllDmRequests:
                 await self._allClientsDo(
                     wsClis, lambda ws: ws.send_text(f"爬取: {maeTime}, 没有弹幕..."))
                 taskConfig.status = FetchStatus.FetchedHistoryOk
+                print("没有弹幕..., 好像完了")
                 break
 
             for it in resList:
@@ -148,15 +157,28 @@ class AllDmRequests:
             taskConfig.lastFetchTime = TimeString.getLocalTimestamp()
             taskConfigManager.save(taskConfig)
 
-            # await progressCallback(f"爬取: {maeTime} 弹幕 { \
-            #     taskConfig.totalDanmaku   \
-            # } (+{addDmCnt}) | 高级弹幕 {   \
-            #     taskConfig.advancedDanmaku\
-            #     } (+{addSeniorDmCnt})")
-            #
-            # await progressCallback(f"接下来爬取: {TimeString.timestampToStr(taskConfig.currentTime)}")
+            await self._allClientsDo(
+                wsClis, lambda ws: ws.send_text(f"爬取: {maeTime} 弹幕 { \
+                taskConfig.totalDanmaku   \
+            } (+{addDmCnt}) | 高级弹幕 {   \
+                taskConfig.advancedDanmaku\
+                } (+{addSeniorDmCnt})"))
+            
+            await self._allClientsDo(
+                wsClis, lambda ws: ws.send_text(
+                    f"接下来爬取: {TimeString.timestampToStr(taskConfig.currentTime)}"))
+
+            # 返回前端的响应 debug
+            print(f"爬取: {maeTime} 弹幕 { \
+                taskConfig.totalDanmaku   \
+            } (+{addDmCnt}) | 高级弹幕 {   \
+                taskConfig.advancedDanmaku\
+                } (+{addSeniorDmCnt})")
+            print(f"接下来爬取: {TimeString.timestampToStr(taskConfig.currentTime)}")
 
             await asyncio.sleep(random.uniform(GlobalConfig().get().timer[0], GlobalConfig().get().timer[1]))
+
+        print("好像结束了")
 
         if (not self._taskData[taskId].isRun):
             await self._allClientsDo(

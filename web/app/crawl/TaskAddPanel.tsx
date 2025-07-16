@@ -5,7 +5,6 @@ import { Input, Button, CheckboxGroup, Checkbox, Card, DatePicker } from "@nextu
 import { toast } from "sonner";
 import { DateValue, getLocalTimeZone, today } from "@internationalized/date";
 import { BACKEND_URL } from "@/config/env";
-import { TaskDateRangePicker } from "./TaskDateRangePicker";
 
 interface VideoPart {
   cid: number;
@@ -37,16 +36,6 @@ export function TaskAddPanel ({ onSuccess, isInModal = false }: TaskAddPanelProp
   const [useDefaultRange, setUseDefaultRange] = useState(true);
   const [startTime, setStartTime] = useState<DateValue>(today(getLocalTimeZone()));
   const [endTime, setEndTime] = useState<DateValue>(today(getLocalTimeZone()));
-
-  const handleRangeChange = (
-    newUseDefaultRange: boolean,
-    newStartTime: DateValue,
-    newEndTime: DateValue
-  ) => {
-    setUseDefaultRange(newUseDefaultRange);
-    setStartTime(newStartTime);
-    setEndTime(newEndTime);
-  };
 
   const handleFetchParts = async (): Promise<void> => {
     if (!urlOrCid.trim()) {
@@ -90,7 +79,7 @@ export function TaskAddPanel ({ onSuccess, isInModal = false }: TaskAddPanelProp
     ];
   };
 
-  const handleSetTaskConfig = async (): Promise<void> => {
+  const handleInitTaskConfig = async (): Promise<void> => {
     if (!taskName.trim()) {
       toast.error("请输入任务名称");
       return;
@@ -123,7 +112,7 @@ export function TaskAddPanel ({ onSuccess, isInModal = false }: TaskAddPanelProp
             range,
           };
 
-          await fetch(`${BACKEND_URL}/allDm/setTaskConfig`, {
+          await fetch(`${BACKEND_URL}/allDm/initTaskConfig`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(config),
@@ -207,7 +196,7 @@ export function TaskAddPanel ({ onSuccess, isInModal = false }: TaskAddPanelProp
         )}
       </div>
 
-      <Button color="primary" onPress={handleSetTaskConfig}>
+      <Button color="primary" onPress={handleInitTaskConfig}>
         确定并初始化任务
       </Button>
     </Card>);

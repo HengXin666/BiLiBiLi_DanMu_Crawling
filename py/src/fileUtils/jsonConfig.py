@@ -6,6 +6,7 @@ import re
 from typing import List, Tuple
 import orjson
 
+from ..utils.timeString import TimeString
 from ..utils.singletonTemplate import Singleton
 from ..utils.basePath import BasePath
 
@@ -42,6 +43,14 @@ class TaskConfig:
     totalDanmaku: int
     advancedDanmaku: int
     status: FetchStatus
+
+    def activation(self):
+        if (self.range[0] == 0):
+            self.range = (TimeString.strToTimestamp("2009-01-01"), self.range[1])
+        if (self.range[1] == 0):
+            self.range = (self.range[0], TimeString.getLocalTimestamp())
+        if (self.currentTime == 0):
+            self.currentTime = self.range[1]
 
 class TaskConfigManager:
     """

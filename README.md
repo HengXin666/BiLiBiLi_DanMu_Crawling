@@ -142,6 +142,10 @@ py 爬取流程: [使用后向爬取] https://github.com/HengXin666/BiLiBiLi_Dan
 
 ## 八、更新日志
 
+- [2025-07-16 10:22:32] [V2.0.0-Beta_7] 重构的新版本, 支持了xml导出(可选是否导出权重 (如果权重为0则不显示)); 支持爬取全弹幕; 目前还差支持 Bas弹幕 爬取; 以及前端的爬取事实状态的更新
+
+---
+
 - [2025-07-11 23:15:01] [V1.5.1] 修复 [#21](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/issues/21) 爬取代码弹幕和bas直接显示内容为零的问题 (原因是爬取BAS弹幕专包时候没有使用新的解析方式)
 - [2025-07-10 21:40:32] [V1.5.0] 修复了 [#18](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/issues/18) 和 [#19](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/issues/19) 中提到的 XML 转义字符的问题, 现在程序会对这些字符进行转义了!
 - [2025-07-04 10:20:23] [V1.4.2] 合并了 [#17](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/pull/17) 以支持获取弹幕权重(`权重字段可用于本地过滤弹幕(b站旧版的弹幕等级屏蔽功能)`), 但是似乎解析不到这个字段(?)

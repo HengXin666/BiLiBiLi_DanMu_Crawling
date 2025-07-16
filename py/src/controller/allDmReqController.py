@@ -1,14 +1,18 @@
 import asyncio
+import io
 from pathlib import Path
 import uuid
 from typing import List, Tuple
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+import urllib
 
 from ..pojo.vo.AllTaskDataVo import AllTaskDataVo
 from ..utils.basePath import BasePath
 from ..utils.timeString import TimeString
 from ..fileUtils.jsonConfig import DATA_PATH, GlobalConfig, TaskConfig, TaskConfigManager
+from ..fileUtils.danMaKuXml import DanMaKuXml
 from ..api.videoApi import VideoPart
 from ..tasks.AllDmRequests import AllDmRequests
 from ..pojo.vo.ResponseModel import ResponseModel
@@ -28,6 +32,11 @@ class VidoPartConfigVo(BaseModel):
 
 class TaskIdVo(BaseModel):
     taskId: str
+
+class ExportXmlOptions(BaseModel):
+    cid: int
+    fileName: str # 仅文件名称, 我们内部需要强制加上.xml
+    includeWeight: bool # 是否导出弹幕权重
 
 @allDmReqController.post("/startTask", response_model=ResponseModel[dict])
 async def startTask(startTask: StartTaskVo):
@@ -52,6 +61,7 @@ async def taskState(ws: WebSocket, taskId: str):
     await ws.accept()
     allDmReqManager._clients[taskId].add(ws)
     try:
+        await ws.send_text("欢迎")
         while True:
             await asyncio.sleep(60 * 60) # 保持连接, 心跳可选
     except WebSocketDisconnect:
@@ -103,3 +113,24 @@ def initTaskConfig(config: VidoPartConfigVo):
 @allDmReqController.get("/getAllTaskData", response_model=ResponseModel[List[AllTaskDataVo]])
 def getAllTaskData():
     return ResponseModel.success(_getAllTaskData())
+
+@allDmReqController.post("/exportXml")
+def exportXml(options: ExportXmlOptions):
+    file_name = options.fileName
+    if not file_name.endswith(".xml"):
+        file_name += ".xml"
+    try:
+        path = GlobalConfig()._tasksPathMap.get(options.cid)
+        xmlStr = DanMaKuXml.exportXml(Path(f"{path}/{options.cid}_dm_data.db"), options.cid, options.includeWeight)
+    except:
+        return HTTPException(status_code=404, detail="路径不存在, cid错误")
+    
+    encodedFilename = urllib.parse.quote(file_name, encoding='utf-8') # type: ignore
+    contentDisposition = f"attachment; filename*=UTF-8''{encodedFilename}"
+    
+    return StreamingResponse(
+        io.BytesIO(xmlStr.encode("utf-8")),
+        media_type="application/xml",
+        headers={"Content-Disposition": contentDisposition}
+    )
+    

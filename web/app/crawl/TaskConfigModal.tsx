@@ -14,7 +14,6 @@ import {
   DatePicker,
 } from "@nextui-org/react";
 import { CalendarDate, DateValue, getLocalTimeZone, today } from "@internationalized/date";
-import { TaskDateRangePicker } from "./TaskDateRangePicker";
 
 export interface TaskConfig {
   cid: number;
