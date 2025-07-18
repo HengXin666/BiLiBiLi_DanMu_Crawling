@@ -11,21 +11,33 @@ import {
 import { BACKEND_URL } from "@/config/env";
 import { TaskConfigModal, TaskConfig } from "./TaskConfigModal";
 import { DateTime } from "luxon";
+import { toast } from "sonner";
 import { ExportXmlModal } from "./ExportXmlModal";
+import { Hammer, Trash2 } from "lucide-react";
 
 interface AllTaskData {
   mainTitle: string;
   tasks: TaskConfig[];
 }
 
-let taskIdCidMap: Map<number, string> = new Map<number, string>();
+let taskIdCidMap: Map<string, string> = new Map<string, string>();
 interface LogEntry {
   time: string;
   message: string;
 }
 
+type ServerMessage =
+  | { type: "log"; data: string }
+  | { type: "taskConfig"; data: TaskConfig };
+
 export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
   const [taskList, setTaskList] = useState<AllTaskData[]>([]);
+  const configIdIndexMap = useRef<Map<string, { groupIndex: number; taskIndex: number }>>(new Map());
+
+  // 删除
+  const [manageMode, setManageMode] = useState(false);
+  const [checkedTaskSet, setCheckedTaskSet] = useState<Set<string>>(new Set());
+
   const [logMap, setLogMap] = useState<Record<number, LogEntry[]>>({});
   const [logOpenMap, setLogOpenMap] = useState<Record<number, boolean>>({});
   const [loadingConfig, setLoadingConfig] = useState(false);
@@ -37,23 +49,63 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
 
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [exportCid, setExportCid] = useState<number>(0);
+  const [exportConfigId, setExportConfigId] = useState<string>("");
   const [exportFileName, setExportFileName] = useState<string>("");
 
-  const handleOpenExport = (cid: number, title: string) => {
-    setExportCid(cid);
-    setExportFileName(title);
-    setIsExportModalOpen(true);
+  const toggleTaskSelect = (configId: string) => {
+    setCheckedTaskSet(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(configId)) {
+        newSet.delete(configId);
+      } else {
+        newSet.add(configId);
+      }
+      return newSet;
+    });
+  };
+
+  const buildConfigIdIndexMap = (list: AllTaskData[]) => {
+    const map = new Map<string, { groupIndex: number; taskIndex: number }>();
+
+    list.forEach((group, groupIndex) => {
+      group.tasks.forEach((task, taskIndex) => {
+        map.set(task.configId, { groupIndex, taskIndex });
+      });
+    });
+
+    configIdIndexMap.current = map;
+  };
+
+  const replaceTaskByConfigId = (newTask: TaskConfig) => {
+    const ref = configIdIndexMap.current.get(newTask.configId);
+    if (!ref) return;
+
+    setTaskList((prev) => {
+      const next = [...prev];
+      const group = next[ref.groupIndex];
+      const newTasks = [...group.tasks];
+
+      newTasks[ref.taskIndex] = newTask;
+
+      next[ref.groupIndex] = { ...group, tasks: newTasks };
+
+      return next;
+    });
   };
 
   const fetchTasks = async () => {
     const res = await fetch(`${BACKEND_URL}/allDm/getAllTaskData`);
     const json = await res.json();
     setTaskList(json.data);
+    buildConfigIdIndexMap(json.data);
   };
 
-  useEffect(() => {
-    fetchTasks();
-  }, [refreshKey]);
+  const handleOpenExport = (configId: string, cid: number, title: string) => {
+    setExportConfigId(configId)
+    setExportCid(cid);
+    setExportFileName(title);
+    setIsExportModalOpen(true);
+  };
 
   const formatTimestamp = (ts: number) => {
     if (ts === 0) return "未开始";
@@ -90,37 +142,129 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
     });
   };
 
+  const handleGetAllRuningTask = async () => {
+    const res = await fetch(`${BACKEND_URL}/allDm/getAllRuningTask`, {
+      method: "POST"
+    });
+
+    const cidToTaskIdMap = (await res.json()).data;
+    for (const [configId, _taskId] of Object.entries(cidToTaskIdMap)) {
+      if (typeof _taskId !== "string") {
+        // 什么垃圾后端?
+        console.warn(`taskId 类型错误: ${configId} ->`, _taskId);
+        continue; // 跳过无效数据
+      }
+      const taskId: string = _taskId;
+      const cid: number = +(configId.split('-').pop() || 0);
+      const ws = new WebSocket(
+        `${BACKEND_URL.replace(/^http/, "ws")}/allDm/ws/${taskId}`
+      );
+
+      ws.onmessage = (event: MessageEvent<string>) => {
+        try {
+          console.log("解析前:", event.data);
+          const msg: ServerMessage = JSON.parse(event.data);
+          
+          if (msg.type === "log") {
+            appendLog(cid, msg.data);
+          } else if (msg.type === "taskConfig") {
+            console.log("设置了啊");
+            
+            replaceTaskByConfigId(msg.data);
+          } else {
+            console.warn(`未知消息类型: ${msg}`);
+          }
+
+          console.log(msg)
+
+        } catch (e) {
+          console.error("消息格式错误", e, event.data);
+        }
+      };
+
+      ws.onerror = (e) => {
+        console.error(`WebSocket error for cid ${configId}`, e);
+      };
+
+      ws.onclose = () => {
+        console.warn(`WebSocket closed for cid ${configId}`);
+
+        if (wsMap.current[cid]) {
+          wsMap.current[cid].close();
+          delete wsMap.current[cid];
+        }
+      };
+
+      toast.info(`连接到: configId = ${configId}`)
+
+      wsMap.current[cid] = ws;
+      taskIdCidMap.set(configId, taskId);
+    }
+  };
+
   const handleStart = async (task: TaskConfig, mainTitle: string) => {
+    if (taskIdCidMap.has(task.configId)) {
+      toast.error("任务已经开始了, 不能再次启动任务; 可以刷新网页再尝试");
+      return;
+    }
     const res = await fetch(`${BACKEND_URL}/allDm/startTask`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cid: task.cid, path: `${mainTitle}/${task.title}` }),
+      // StartTaskVo
+      body: JSON.stringify({ configId: task.configId, cid: task.cid, path: `${mainTitle}/${task.title}` }),
     });
 
     const taskId = (await res.json()).data.taskId;
-    taskIdCidMap.set(task.cid, taskId);
+    taskIdCidMap.set(task.configId, taskId);
 
     const ws = new WebSocket(
       `${BACKEND_URL.replace(/^http/, "ws")}/allDm/ws/${taskId}`
     );
 
-    ws.onmessage = (event) => {
-      appendLog(task.cid, event.data);
+    toast.info(`连接到: cid = ${task.cid}`)
+
+    ws.onmessage = (event: MessageEvent<string>) => {
+      try {
+        const msg: ServerMessage = JSON.parse(event.data);
+        
+        if (msg.type === "log") {
+          appendLog(task.cid, msg.data);
+        } else if (msg.type === "taskConfig") {
+          replaceTaskByConfigId(msg.data);
+        } else {
+          console.warn(`未知消息类型: ${msg}`);
+        }
+
+      } catch (e) {
+        console.error("消息格式错误", e, event.data);
+      }
+    };
+
+    ws.onerror = (e) => {
+      console.error(`WebSocket error for cid ${task.cid}`, e);
+    };
+
+    ws.onclose = () => {
+      console.warn(`WebSocket closed for cid ${task.cid}`);
+      if (wsMap.current[task.cid]) {
+        wsMap.current[task.cid].close();
+        delete wsMap.current[task.cid];
+      }
     };
 
     wsMap.current[task.cid] = ws;
-
-    fetchTasks();
   };
 
   const handleStop = async (task: TaskConfig) => {
-    await fetch(`${BACKEND_URL}/allDm/stopTask`, {
+    if (taskIdCidMap.get(task.configId) === undefined) {
+      toast.error("任务并没有开始, 请刷新网页再尝试")
+      return;
+    }
+    await fetch(`${BACKEND_URL}/allDm/stopTask/${taskIdCidMap.get(task.configId)}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(taskIdCidMap.get(task.cid)),
     });
 
-    taskIdCidMap.delete(task.cid);
+    taskIdCidMap.delete(task.configId);
 
     if (wsMap.current[task.cid]) {
       wsMap.current[task.cid].close();
@@ -130,11 +274,11 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
     fetchTasks();
   };
 
-  const handleOpenConfig = async (cid: number) => {
+  const handleOpenConfig = async (configId: string, cid: number) => {
     setLoadingConfig(true);
     setIsConfigModalOpen(true);
     try {
-      const res = await fetch(`${BACKEND_URL}/allDm/getTaskConfig/${cid}`);
+      const res = await fetch(`${BACKEND_URL}/allDm/getTaskConfig/${configId}?cid=${cid}`);
       const json = await res.json();
       setTaskConfigData(json.data);
     } finally {
@@ -159,6 +303,11 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
       [cid]: !prev[cid],
     }));
   };
+
+  useEffect(() => {
+    fetchTasks();
+    handleGetAllRuningTask();
+  }, [refreshKey]);
 
   return (
     <div className="space-y-4">
@@ -204,7 +353,14 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
 
                   <div className="flex flex-col items-end space-y-1 w-1/4">
                     <div className={`font-bold ${getStatusColor(task.status)}`}>
-                      {task.status}
+                      {task.status} {" "}
+                      {manageMode && (
+                        <input
+                          type="checkbox"
+                          checked={checkedTaskSet.has(task.configId)}
+                          onChange={() => toggleTaskSelect(task.configId)}
+                        />
+                      )}
                     </div>
                     <Button size="sm" color="primary" onPress={() => handleStart(task, t.mainTitle)}>
                       运行
@@ -212,10 +368,10 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
                     <Button size="sm" color="warning" onPress={() => handleStop(task)}>
                       暂停
                     </Button>
-                    <Button size="sm" color="secondary" onPress={() => handleOpenConfig(task.cid)}>
+                    <Button size="sm" color="secondary" onPress={() => handleOpenConfig(task.configId, task.cid)}>
                       配置
                     </Button>
-                    <Button size="sm" color="default" onPress={() => handleOpenExport(task.cid, task.title)}>
+                    <Button size="sm" color="default" onPress={() => handleOpenExport(task.configId, task.cid, task.title)}>
                       导出弹幕
                     </Button>
                   </div>
@@ -226,9 +382,60 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
         ))}
       </Accordion>
 
+      {manageMode ? (
+        <div className="fixed bottom-20 right-8 z-50 flex space-x-4">
+          <Button
+            color="danger"
+            className="shadow-xl rounded-full px-6 py-4 text-base"
+            startContent={<Trash2 size={20} />}
+            size="sm"
+            disabled={checkedTaskSet.size === 0}
+            onPress={async () => {
+              if (!confirm(`确定删除 ${checkedTaskSet.size} 个任务吗？`)) 
+                return;
+
+              await fetch(`${BACKEND_URL}/allDm/deleteTasks`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ configIds: Array.from(checkedTaskSet) }),
+              });
+
+              setCheckedTaskSet(new Set());
+              setManageMode(false);
+              fetchTasks();
+            }}
+          >
+            删除
+          </Button>
+
+          <Button
+            color="default"
+            className="shadow-xl rounded-full px-6 py-4 text-base"
+            size="sm"
+            onPress={() => {
+              setCheckedTaskSet(new Set());
+              setManageMode(false);
+            }}
+          >
+            取消
+          </Button>
+        </div>
+      ) : (
+        <Button
+          color="secondary"
+          className="fixed bottom-20 right-8 z-50 shadow-xl rounded-full px-6 py-4 text-base"
+          size="sm"
+          onPress={() => setManageMode(true)}
+          startContent={<Hammer size={20} />}
+        >
+          管理任务
+        </Button>
+      )}
+
       <ExportXmlModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
+        configId={exportConfigId}
         cid={exportCid}
         defaultFileName={exportFileName}
       />

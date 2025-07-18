@@ -1,8 +1,10 @@
+from collections import defaultdict
 import time
 import asyncio
 from typing import Awaitable, Callable, Dict, Set
 from fastapi import WebSocket
 
+from ..pojo.vo.WebSocketVo import WebSocketVo
 from ..api.videoApi import *
 from ..api.danMaKuApi import * 
 from ..fileUtils.jsonConfig import *
@@ -36,26 +38,34 @@ class AllDmRequests:
     
     def __init__(self) -> None:
         # 维护一个任务池 {uuid: 任务}
-        self._tasks: Dict[str, asyncio.Task] = {}
+        self._tasks: Dict[str, asyncio.Task] = defaultdict()
 
         # 维护任务运行的可操作数 如: 是否暂停
-        self._taskData: Dict[str, AllDmRequests.TaskData] = {}
+        self._taskData: Dict[str, AllDmRequests.TaskData] = defaultdict()
 
         # 维护一个客户端连接池, 用于返回执行进度
         # {uuid: Set{客户端ws句柄}}
-        self._clients: Dict[str, Set[WebSocket]] = {}
+        self._clients: Dict[str, Set[WebSocket]] = defaultdict()
+    
+    async def delTask(self, taskId: str) -> None:
+        self._tasks.pop(taskId)
+        self._taskData.pop(taskId)
+        # 删除客户端并且断开连接
+        await self._allClientsDo(
+            self._clients.pop(taskId), lambda ws: ws.close())
         
     async def _allClientsDo(self, clis: Set[WebSocket], cb: Callable[[WebSocket], Awaitable[None]]) -> None:
         removeList = []
         for cli in clis:
             try:
                 await cb(cli)
-            except Exception:
+            except Exception as e:
+                print(e)
                 removeList.append(cli)
         for cli in removeList:
             clis.remove(cli)
 
-    async def run(self, taskId: str, cid: int):
+    async def run(self, confifId: str, taskId: str, cid: int):
         """开始爬取历史弹幕
 
         Args:
@@ -65,7 +75,8 @@ class AllDmRequests:
         """
         print("开始", taskId, cid)
         
-        path = GlobalConfig()._tasksPathMap[cid]
+        path = GlobalConfig()._tasksIdPathMap[confifId]
+        GlobalConfig()._configIdToTaskIdMap[confifId] = taskId
 
         # 记录协程任务数据
         self._taskData[taskId] = AllDmRequests.TaskData(
@@ -77,11 +88,9 @@ class AllDmRequests:
         # 初始化 api
         api = DanMaKuApi(GlobalConfig().get().cookies)
 
-        wsClis = self._clients[taskId]
-
-        print("发生开始信息")
         await self._allClientsDo(
-            wsClis, lambda ws: ws.send_text(f"开始任务 {taskId}"))
+            self._clients[taskId], lambda ws: ws.send_json(
+                WebSocketVo.log(f"开始任务 {taskId}")))
 
         # 创建 & 读取 配置
         taskConfigManager = TaskConfigManager(Path(f"{path}/{cid}_config.json"))
@@ -95,6 +104,10 @@ class AllDmRequests:
 
         # 注意, 如果首尾出现 0, 我们需要手动处理
         taskConfig.activation() # 也就是活化一下数据, 但是这样前端展示的就是具体时间了哦
+
+        await self._allClientsDo(
+                self._clients[taskId], lambda ws: ws.send_json(
+                    WebSocketVo.msg("taskConfig", taskConfig.toDict())))
 
         while self._taskData[taskId].isRun:
             addDm = []
@@ -114,7 +127,8 @@ class AllDmRequests:
                         return 0, resList
                     except:
                         await self._allClientsDo(
-                            wsClis, lambda ws: ws.send_text(f"超时，重试中: {maeTime}"))
+                            self._clients[taskId], lambda ws: ws.send_json(
+                                WebSocketVo.log(f"超时，重试中: {maeTime}")))
                         await asyncio.sleep(random.uniform(
                             GlobalConfig().get().timer[0],
                             GlobalConfig().get().timer[1]))
@@ -128,7 +142,8 @@ class AllDmRequests:
 
             if (len(resList) == 0):
                 await self._allClientsDo(
-                    wsClis, lambda ws: ws.send_text(f"爬取: {maeTime}, 没有弹幕..."))
+                    self._clients[taskId], lambda ws: ws.send_json(
+                        WebSocketVo.log(f"爬取: {maeTime}, 没有弹幕...")))
                 taskConfig.status = FetchStatus.FetchedHistoryOk
                 print("没有弹幕..., 好像完了")
                 break
@@ -140,7 +155,8 @@ class AllDmRequests:
                     addId.add(it.id)
                     addDmCnt += 1
 
-                    addSeniorDmCnt += it.mode >= 7
+                    # it.mode >= 7 是高级弹幕, 代码弹幕, Bas弹幕, 统称神弹幕
+                    addSeniorDmCnt += (it.mode >= 7)
 
                     if (not (it.attr & 1) and taskConfig.currentTime > it.ctime):
                         taskConfig.currentTime = it.ctime
@@ -158,32 +174,45 @@ class AllDmRequests:
             taskConfigManager.save(taskConfig)
 
             await self._allClientsDo(
-                wsClis, lambda ws: ws.send_text(f"爬取: {maeTime} 弹幕 { \
-                taskConfig.totalDanmaku   \
-            } (+{addDmCnt}) | 高级弹幕 {   \
-                taskConfig.advancedDanmaku\
-                } (+{addSeniorDmCnt})"))
-            
+                self._clients[taskId], lambda ws: ws.send_json(WebSocketVo.log(
+                f"爬取: {maeTime} 弹幕 {       \
+                    taskConfig.totalDanmaku   \
+                } (+{addDmCnt}) | 神弹幕 {     \
+                    taskConfig.advancedDanmaku\
+                    } (+{addSeniorDmCnt})")))
+                
             await self._allClientsDo(
-                wsClis, lambda ws: ws.send_text(
-                    f"接下来爬取: {TimeString.timestampToStr(taskConfig.currentTime)}"))
+                self._clients[taskId], lambda ws: ws.send_json(
+                    WebSocketVo.log(
+                        f"接下来爬取: {TimeString.timestampToStr(taskConfig.currentTime)}")))
+
+            # 让客户端更新数据预览
+            await self._allClientsDo(
+                self._clients[taskId], lambda ws: ws.send_json(
+                    WebSocketVo.msg("taskConfig", taskConfig.toDict())))
 
             # 返回前端的响应 debug
             print(f"爬取: {maeTime} 弹幕 { \
                 taskConfig.totalDanmaku   \
-            } (+{addDmCnt}) | 高级弹幕 {   \
+            } (+{addDmCnt}) | 神弹幕 {   \
                 taskConfig.advancedDanmaku\
                 } (+{addSeniorDmCnt})")
             print(f"接下来爬取: {TimeString.timestampToStr(taskConfig.currentTime)}")
 
             await asyncio.sleep(random.uniform(GlobalConfig().get().timer[0], GlobalConfig().get().timer[1]))
 
-        print("好像结束了")
-
         if (not self._taskData[taskId].isRun):
             await self._allClientsDo(
-                    wsClis, lambda ws: ws.send_text(f"已暂停"))
+                self._clients[taskId], lambda ws: ws.send_json(
+                    WebSocketVo.log(f"已暂停")))
             taskConfig.status = FetchStatus.PauseHistory
+
+        await self._allClientsDo(
+            self._clients[taskId], lambda ws: ws.send_json(
+                WebSocketVo.msg("taskConfig", taskConfig.toDict())))
+
+        GlobalConfig()._configIdToTaskIdMap.pop(taskConfig.configId)
+        await self.delTask(taskId)
 
         taskConfigManager.save(taskConfig)
 
@@ -288,7 +317,7 @@ class AllDmRequests:
             # 返回前端的响应
             print(f"爬取: {maeTime} 弹幕 { \
                 taskConfig.totalDanmaku   \
-            } (+{addDmCnt}) | 高级弹幕 {   \
+            } (+{addDmCnt}) | 神弹幕 {   \
                 taskConfig.advancedDanmaku\
                 } (+{addSeniorDmCnt})")
             print(f"接下来爬取: {TimeString.timestampToStr(taskConfig.currentTime)}")

@@ -42,6 +42,7 @@ py 爬取流程: [使用后向爬取] https://github.com/HengXin666/BiLiBiLi_Dan
     
     最终产生内容: [注意, 一次爬取任务对应一个配置]
         1. 配置文件(.json), 存放本次爬取任务的配置, 包含:
+            配置文件id (需要唯一, 因为cid可能重复(用户创建多个一样的爬取任务), 不能仅通过它来区分)
             爬取的视频的 cid
             爬取的视频标题
             最后一次进行爬取的时间
@@ -141,6 +142,8 @@ py 爬取流程: [使用后向爬取] https://github.com/HengXin666/BiLiBiLi_Dan
 [![Forkers repo roster for @HengXin666/BiLiBiLi_DanMu_Crawling](https://reporoster.com/forks/HengXin666/BiLiBiLi_DanMu_Crawling)](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/network/members)
 
 ## 八、更新日志
+
+- [2025-07-18 15:10:10] [V2.0.0-Beta_8] 修改部分接口, 因为需要支持相同cid情况, 因此为许多接口拓展出配置文件的唯一id: configId; 前端支持实时更新弹幕爬取状况, 支持删除配置
 
 - [2025-07-16 10:22:32] [V2.0.0-Beta_7] 重构的新版本, 支持了xml导出(可选是否导出权重 (如果权重为0则不显示)); 支持爬取全弹幕; 目前还差支持 Bas弹幕 爬取; 以及前端的爬取事实状态的更新
 

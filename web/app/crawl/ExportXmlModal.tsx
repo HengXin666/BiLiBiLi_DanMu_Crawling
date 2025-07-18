@@ -7,11 +7,12 @@ import { BACKEND_URL } from "@/config/env";
 interface ExportXmlModalProps {
   isOpen: boolean;
   onClose: () => void;
+  configId: string;
   cid: number;
   defaultFileName: string;
 }
 
-export function ExportXmlModal ({ isOpen, onClose, cid, defaultFileName }: ExportXmlModalProps) {
+export function ExportXmlModal ({ isOpen, onClose, configId, cid, defaultFileName }: ExportXmlModalProps) {
   const [fileName, setFileName] = useState<string>(defaultFileName);
   const [includeWeight, setIncludeWeight] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
@@ -34,7 +35,8 @@ export function ExportXmlModal ({ isOpen, onClose, cid, defaultFileName }: Expor
       const res = await fetch(`${BACKEND_URL}/allDm/exportXml`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cid, fileName, includeWeight }),
+        // py: ExportXmlOptions
+        body: JSON.stringify({ configId, cid, fileName, includeWeight }),
       });
 
       // 从响应头获取真实文件名

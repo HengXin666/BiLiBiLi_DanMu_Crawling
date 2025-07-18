@@ -199,5 +199,6 @@ export function TaskAddPanel ({ onSuccess, isInModal = false }: TaskAddPanelProp
       <Button color="primary" onPress={handleInitTaskConfig}>
         确定并初始化任务
       </Button>
-    </Card>);
+    </Card>
+  );
 }

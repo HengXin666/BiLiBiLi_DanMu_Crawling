@@ -16,6 +16,7 @@ import {
 import { CalendarDate, DateValue, getLocalTimeZone, today } from "@internationalized/date";
 
 export interface TaskConfig {
+  configId: string;
   cid: number;
   title: string;
   lastFetchTime: number;

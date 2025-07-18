@@ -1,3 +1,4 @@
+from collections import defaultdict
 from enum import Enum
 from dataclasses import dataclass, asdict
 import os
@@ -26,15 +27,17 @@ class TaskConfig:
     弹幕爬取任务配置数据类
     
     Attributes:
+        configId (str): 配置文件的唯一id
         cid (int): 视频唯一标识符
         title (str): 爬取的视频标题
         lastFetchTime (int): 上次执行时间, Unix 时间戳(秒)
         range (Tuple[int, int]): 爬取时间范围(左边界, 右边界), Unix 时间戳(秒)
         currentTime (int): 当前爬取的时间点, Unix 时间戳(秒)
         totalDanmaku (int): 爬取到的弹幕总数
-        advancedDanmaku (int): 爬取到的高级弹幕(如代码弹幕、Bas弹幕)数
+        advancedDanmaku (int): 爬取到的神弹幕(如高级弹幕、代码弹幕、Bas弹幕)数
         status (FetchStatus): 当前爬取状态
     """
+    configId: str
     cid: int
     title: str
     lastFetchTime: int
@@ -52,6 +55,19 @@ class TaskConfig:
         if (self.currentTime == 0):
             self.currentTime = self.range[1]
 
+    def toDict(self) -> dict:
+        return {
+            "configId": self.configId,
+            "cid": self.cid,
+            "title": self.title,
+            "lastFetchTime": self.lastFetchTime,
+            "range": list(self.range),   # tuple转list, 保证json兼容
+            "currentTime": self.currentTime,
+            "totalDanmaku": self.totalDanmaku,
+            "advancedDanmaku": self.advancedDanmaku,
+            "status": self.status  # Enum转字符串
+        }
+
 class TaskConfigManager:
     """
     任务配置管理器, 负责读取与保存任务配置到 JSON 文件
@@ -65,6 +81,7 @@ class TaskConfigManager:
         # 文件不存在时保存默认配置, 避免后续读取报错
         if not self.path.exists():
             self.save(TaskConfig(
+                configId="",
                 cid=0,
                 title="",
                 lastFetchTime=0,
@@ -79,6 +96,7 @@ class TaskConfigManager:
         """读取配置文件, 反序列化为 TaskConfig 对象"""
         raw = orjson.loads(self.path.read_bytes())
         return TaskConfig(
+            configId=raw["configId"],
             cid=raw["cid"],
             title=raw["title"],
             lastFetchTime=raw["lastFetchTime"],
@@ -139,8 +157,11 @@ class GlobalConfig:
         self._configManager = MainConfigManager(BasePath.relativePath(f"{DATA_PATH}/main_config.json"))
         self._config: MainConfig = self._configManager.load()
         
-        # 所有爬取任务的路径map: {cid : path}
-        self._tasksPathMap: dict[int, str] = dict()
+        # 所有爬取任务的路径map: {configId : path} 因为 cid不唯一
+        self._tasksIdPathMap: dict[str, str] = defaultdict()
+
+        # configId 和 爬取任务 的映射
+        self._configIdToTaskIdMap: dict[str, str] = defaultdict()
 
         self._initTasksPathMap()
 
@@ -160,12 +181,14 @@ class GlobalConfig:
                 for fileName in os.listdir(subDirPath):
                     # 匹配形如 {cid}_config.json 的文件
                     match = re.match(r"(\d+)_config\.json", fileName)
-                    if match:
-                        cid = int(match.group(1))
-                        self._tasksPathMap[cid] = subDirPath
+                    if (match):
+                        # 必须存在的 configId, 否则创建的时候就不是正常创建了...
+                        taksConfig = TaskConfigManager(Path(f"{subDirPath}/{fileName}")).load()
+                        if (taksConfig.configId != ""):
+                            self._tasksIdPathMap[taksConfig.configId] = subDirPath
 
-    def addCidPathKV(self, cid: int, path: str) -> None:
-        self._tasksPathMap[cid] = path
+    def addCidPathKV(self, configId: str, path: str) -> None:
+        self._tasksIdPathMap[configId] = path
 
     def get(self) -> MainConfig:
         return self._config

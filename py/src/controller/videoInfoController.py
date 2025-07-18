@@ -16,7 +16,6 @@ class UrlVo(BaseModel):
 @videoInfoController.post("/getVideoPartList", response_class=ResponseModel[VideoPartListVo])
 def getVideoPartList(urlVo: UrlVo):
     err, resList = VideoApi.getCidPart(urlVo.url)
-    print(resList)
     if (err == 0):
         return ResponseModel.success({
             "cidList": resList
