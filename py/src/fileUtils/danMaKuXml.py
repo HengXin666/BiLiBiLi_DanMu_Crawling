@@ -37,9 +37,12 @@ class DanMaKuXml:
                     str(dm.ctime),      # 弹幕发送时间
                     str(dm.pool),       # 弹幕池类型
                     str(dm.id),         # 发送者mid的HASH
-                    dm.midHash,         # 弹幕dmid
-                    str(dm.weight)      # 弹幕的屏蔽等级
+                    dm.midHash         # 弹幕dmid 
                 ]
+
+                # 弹幕的屏蔽等级
+                if dm.weight != 0:
+                    pAttrs.append(str(dm.weight))
 
                 # 转义内容, 默认 仅转义 & < >
                 content = escape(dm.content)
