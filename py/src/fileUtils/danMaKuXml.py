@@ -30,14 +30,14 @@ class DanMaKuXml:
 
                 # 弹幕属性
                 pAttrs = [
-                    str(appearTime),    # 出现时间
-                    str(dm.mode),       # 弹幕类型
-                    str(dm.fontsize),   # 弹幕字号
-                    str(dm.color),      # 弹幕颜色
-                    str(dm.ctime),      # 弹幕发送时间
-                    str(dm.pool),       # 弹幕池类型
-                    str(dm.id),         # 发送者mid的HASH
-                    dm.midHash         # 弹幕dmid 
+                    str(appearTime),    # 00 出现时间
+                    str(dm.mode),       # 01 弹幕类型
+                    str(dm.fontsize),   # 02 弹幕字号
+                    str(dm.color),      # 03 弹幕颜色
+                    str(dm.ctime),      # 04 弹幕发送时间
+                    str(dm.pool),       # 05 弹幕池类型
+                    dm.midHash,         # 06 发送者mid的HASH
+                    dm.idStr            # 07 弹幕dmid
                 ]
 
                 # 弹幕的屏蔽等级
@@ -56,14 +56,14 @@ class DanMaKuXml:
 
                 # 弹幕属性
                 pAttrs = [
-                    str(appearTime),    # 出现时间
-                    str(dm.mode),       # 弹幕类型
-                    str(dm.fontsize),   # 弹幕字号
-                    str(dm.color),      # 弹幕颜色
-                    str(dm.ctime),      # 弹幕发送时间
-                    str(dm.pool),       # 弹幕池类型
-                    str(dm.id),         # 发送者mid的HASH
-                    dm.midHash,         # 弹幕dmid
+                    str(appearTime),    # 00 出现时间
+                    str(dm.mode),       # 01 弹幕类型
+                    str(dm.fontsize),   # 02 弹幕字号
+                    str(dm.color),      # 03 弹幕颜色
+                    str(dm.ctime),      # 04 弹幕发送时间
+                    str(dm.pool),       # 05 弹幕池类型
+                    dm.midHash,         # 06 发送者mid的HASH
+                    dm.idStr            # 07 弹幕dmid
                 ]
 
                 # 转义内容, 默认 仅转义 & < >
