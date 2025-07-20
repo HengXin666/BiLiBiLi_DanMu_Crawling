@@ -49,7 +49,7 @@ export default function AboutPage () {
               感谢所有为本项目做出贡献的开发者。
             </p>
             <p className="text-base text-muted-foreground mb-4 leading-relaxed">
-              特别感谢 <a href="https://github.com/ccicnce113424">ccicnce113424</a> 在 <a href="https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/issues/14">#14</a> 中提供的新的爬取思路。
+              特别感谢 <a href="https://github.com/ccicnce113424">ccicnce113424</a> 在 <a href="https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/issues/14">#14</a> 中提供的新的爬取思路(该方法受BiliPlus全弹幕下载器启发)。
             </p>
             <a
               href="https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/graphs/contributors"
