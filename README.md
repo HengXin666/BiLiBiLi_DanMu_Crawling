@@ -107,6 +107,8 @@ py 爬取流程: [使用后向爬取] https://github.com/HengXin666/BiLiBiLi_Dan
 
 ![alt text](dev/sp_20250715_233825.png)
 
+![alt text](dev/sp_20250720_134745.png)
+
 ## 三、使用说明
 
 @todo, 到时候可能放到我博客的单独一栏?
@@ -142,6 +144,8 @@ py 爬取流程: [使用后向爬取] https://github.com/HengXin666/BiLiBiLi_Dan
 [![Forkers repo roster for @HengXin666/BiLiBiLi_DanMu_Crawling](https://reporoster.com/forks/HengXin666/BiLiBiLi_DanMu_Crawling)](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/network/members)
 
 ## 八、更新日志
+
+- [2025-07-20 13:49:01] [V2.0.0-Beta_11] 修复爬取时候因使用时间戳不是北京时间而导致丢失弹幕的问题 (#23)
 
 - [2025-07-20 11:31:50] [V2.0.0-Beta_10] 修复弹幕导出的格式错误问题(有两个字段写错了)
 
