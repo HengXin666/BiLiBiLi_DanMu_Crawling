@@ -8,9 +8,6 @@ reqData/
 # 本地测试
 test.py
 
-# 配置
-config/
-
 # 输出
 output/
 *.AppImage
@@ -39,9 +36,6 @@ __pycache__/
 
 # 本地测试
 test.py
-
-# 配置
-config/
 
 # 输出
 output/
