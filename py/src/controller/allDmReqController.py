@@ -45,10 +45,23 @@ class DeleteTasksVo(BaseModel):
 
 @allDmReqController.post("/getAllRuningTask", response_model=ResponseModel[dict[int, str]])
 def getAllRuningTask():
+    """获取所有正在运行的任务Id (TaskId)
+
+    Returns:
+        _type_: {"配置文件Id": "任务Id"}
+    """
     return ResponseModel.success(GlobalConfig()._configIdToTaskIdMap)
 
 @allDmReqController.post("/startTask", response_model=ResponseModel[dict])
 async def startTask(startTask: StartTaskVo):
+    """启动爬虫任务, 任务直接在后台运行
+
+    Args:
+        startTask (StartTaskVo): 启动任务标识 (cid, taskId)
+
+    Returns:
+        _type_: TaskId 运行中的任务Id
+    """
     taskId = str(uuid.uuid4())
     allDmReqManager._clients[taskId] = set() # 先初始化客户端池
     task = asyncio.create_task(allDmReqManager.run(startTask.configId, taskId, startTask.cid))
@@ -59,6 +72,14 @@ async def startTask(startTask: StartTaskVo):
 
 @allDmReqController.post("/stopTask/{taskId}", response_model=ResponseModel[None])
 async def stopTask(taskId: str):
+    """停止任务
+
+    Args:
+        taskId (str): 任务Id
+
+    Returns:
+        _type_: ok
+    """
     try:
         allDmReqManager._taskData[taskId].isRun = False
         return ResponseModel.success()
@@ -67,7 +88,19 @@ async def stopTask(taskId: str):
 
 @allDmReqController.websocket("/ws/{taskId}")
 async def taskState(ws: WebSocket, taskId: str):
+    """webSocket 消息
+
+    Args:
+        ws (WebSocket): _description_
+        taskId (str): 任务Id
+    """
     await ws.accept()
+    
+    # 全部推送, 因为新连接用户肯定没有数据
+    # @todo 又因为前端只能通过刷新来触发ws重连, 故 ok
+    for msg in allDmReqManager._taskLog[taskId]:
+        await ws.send_json(WebSocketVo.log(msg))
+    
     allDmReqManager._clients[taskId].add(ws)
     try:
         await ws.send_json(WebSocketVo.log("已连接到后端"))
@@ -78,6 +111,15 @@ async def taskState(ws: WebSocket, taskId: str):
 
 @allDmReqController.get("/getTaskConfig/{configId}", response_model=ResponseModel[TaskConfig])
 def getTaskConfig(configId: str, cid: Optional[str] = None):
+    """获取任务配置
+
+    Args:
+        configId (str): 配置文件Id
+        cid (Optional[str], optional): 视频cid, 不可为空. Defaults to None.
+
+    Returns:
+        _type_: _description_
+    """
     if (cid == None):
         return ResponseModel.error(msg=f"应该传入 cid 查询参数")
     try:
@@ -90,6 +132,14 @@ def getTaskConfig(configId: str, cid: Optional[str] = None):
 
 @allDmReqController.post("/setTaskConfig", response_model=ResponseModel[None])
 def setTaskConfig(config: TaskConfig):
+    """设置配置 (更新配置)
+
+    Args:
+        config (TaskConfig): 新配置
+
+    Returns:
+        _type_: ok
+    """
     try:
         path = GlobalConfig()._tasksIdPathMap[config.configId]
         taskConfigManager = TaskConfigManager(Path(
@@ -101,6 +151,14 @@ def setTaskConfig(config: TaskConfig):
     
 @allDmReqController.post("/deleteTasks", response_model=ResponseModel[None])
 def deleteTasks(delList: DeleteTasksVo):
+    """删除配置, 如果该父目录只有这一个子文件夹, 则连同父目录一起删除
+
+    Args:
+        delList (DeleteTasksVo): 配置Id 列表
+
+    Returns:
+        _type_: ok
+    """
     try:
         for configId in delList.configIds:
             path = Path(GlobalConfig()._tasksIdPathMap[configId])
@@ -135,10 +193,23 @@ def initTaskConfig(config: VidoPartConfigVo):
 
 @allDmReqController.get("/getAllTaskData", response_model=ResponseModel[List[AllTaskDataVo]])
 def getAllTaskData():
+    """获取所有任务数据
+
+    Returns:
+        _type_: (标题 + 配置列表) 的列表
+    """
     return ResponseModel.success(_getAllTaskData())
 
 @allDmReqController.post("/exportXml")
 def exportXml(options: ExportXmlOptions):
+    """导出Xml (时间可能比较久, 是否可以优化?)
+
+    Args:
+        options (ExportXmlOptions): 导出选项
+
+    Returns:
+        _type_: .xml 下载
+    """
     file_name = options.fileName
     if not file_name.endswith(".xml"):
         file_name += ".xml"

@@ -207,6 +207,7 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
       toast.error("任务已经开始了, 不能再次启动任务; 可以刷新网页再尝试");
       return;
     }
+    // 新建任务
     const res = await fetch(`${BACKEND_URL}/allDm/startTask`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -214,9 +215,11 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
       body: JSON.stringify({ configId: task.configId, cid: task.cid, path: `${mainTitle}/${task.title}` }),
     });
 
+    // 记录 taskId
     const taskId = (await res.json()).data.taskId;
     taskIdCidMap.set(task.configId, taskId);
 
+    // 连接到实时日志
     const ws = new WebSocket(
       `${BACKEND_URL.replace(/^http/, "ws")}/allDm/ws/${taskId}`
     );

@@ -11,17 +11,35 @@ class GlobalConfigVo(BaseModel, MainConfig):
 
 @mainConfigController.get("/getConfig", response_model=ResponseModel[dict])
 def getConfig():
+    """获取全局配置
+
+    Returns:
+        _type_: 全局配置
+    """
     return ResponseModel.success(
         GlobalConfig().get()
     )
 
 @mainConfigController.post("/setConfig", response_class=ResponseModel[None])
 def setConfig(config: GlobalConfigVo):
+    """设置全局配置
+
+    Args:
+        config (GlobalConfigVo): 全局配置
+
+    Returns:
+        _type_: ok
+    """
     GlobalConfig()._config = config
     GlobalConfig().save()
     return ResponseModel.success()
 
 @mainConfigController.post("/reReadConfig", response_model=ResponseModel[None])
 def reReadConfig():
+    """从文件系统重新读取配置到内存
+
+    Returns:
+        _type_: ok
+    """
     GlobalConfig().reRead()
     return ResponseModel.success()

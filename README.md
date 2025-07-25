@@ -14,9 +14,9 @@
 ```cpp
 爬取侧: py 爬虫, 通过命令参数驱动
     - 纯命令行使用
-    - 作为服务程序启动 (方便进程间通信)
+    - [x] 作为服务程序启动 (方便进程间通信)
 
-客户端: C++ QT, 发送命令给爬取侧, 爬取侧返回进度
+// 客户端: C++ QT, 发送命令给爬取侧, 爬取侧返回进度
 
 前端: React (TS), 发送命令给爬取侧, 爬取侧返回进度 (Docker 版本)
 
@@ -113,9 +113,11 @@ py 爬取流程: [使用后向爬取] https://github.com/HengXin666/BiLiBiLi_Dan
 
 @todo, 到时候可能放到我博客的单独一栏?
 
-## 四、标题
+## 四、代码构建
 
-@todo
+- [Python 服务端](./py/README.md)
+
+- [Web 前端](./web/README.md)
 
 ## 五、问题反馈
 
@@ -144,6 +146,8 @@ py 爬取流程: [使用后向爬取] https://github.com/HengXin666/BiLiBiLi_Dan
 [![Forkers repo roster for @HengXin666/BiLiBiLi_DanMu_Crawling](https://reporoster.com/forks/HengXin666/BiLiBiLi_DanMu_Crawling)](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/network/members)
 
 ## 八、更新日志
+
+- [2025-07-25 23:07:45] [V2.0.0-Beta_13] [#25](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/issues/25): ` ws后端传输缺失：当开始一个任务后，第一次爬取的日期不会显示在web端而仅会出现在后端log`; 现在为后端新增一个 运行时消息队列, 如果前端消息小于该队列, 则补充消息; 并且提供文件日志, 不同推送ws, 仅供查看. 命名为 `{cid}_log.log`. 新增一个接口.
 
 - [2025-07-20 14:20:25] [V2.0.0-Beta_12] 简单编写了 Web 关于界面
 

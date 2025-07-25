@@ -1,4 +1,7 @@
 from collections import defaultdict
+from logging import Logger
+import logging
+from logging.handlers import RotatingFileHandler
 import time
 import asyncio
 from typing import Awaitable, Callable, Dict, Set
@@ -35,7 +38,6 @@ class AllDmRequests:
         # 是否运行
         isRun: bool = True
 
-    
     def __init__(self) -> None:
         # 维护一个任务池 {uuid: 任务}
         self._tasks: Dict[str, asyncio.Task] = defaultdict()
@@ -46,6 +48,9 @@ class AllDmRequests:
         # 维护一个客户端连接池, 用于返回执行进度
         # {uuid: Set{客户端ws句柄}}
         self._clients: Dict[str, Set[WebSocket]] = defaultdict()
+
+        # 维护任务的运行时消息 {任务id : [logs...]}
+        self._taskLog: Dict[str, List[str]] = defaultdict()
     
     async def delTask(self, taskId: str) -> None:
         self._tasks.pop(taskId)
@@ -54,7 +59,8 @@ class AllDmRequests:
         await self._allClientsDo(
             self._clients.pop(taskId), lambda ws: ws.close())
         
-    async def _allClientsDo(self, clis: Set[WebSocket], cb: Callable[[WebSocket], Awaitable[None]]) -> None:
+    @staticmethod
+    async def _allClientsDo(clis: Set[WebSocket], cb: Callable[[WebSocket], Awaitable[None]]) -> None:
         removeList = []
         for cli in clis:
             try:
@@ -65,7 +71,64 @@ class AllDmRequests:
         for cli in removeList:
             clis.remove(cli)
 
-    async def run(self, confifId: str, taskId: str, cid: int):
+    class LogProxy:
+        def __init__(self, _configId: str, cid: int, msgListRef: List[str]) -> None:
+            self._configId = _configId
+            self._cid = cid
+            self._msgListRef = msgListRef
+
+            path = GlobalConfig()._tasksIdPathMap[_configId]
+            self._logPath = Path(f"{path}/{cid}_log.log")
+            self._logger = self._initLogger()
+
+        def _initLogger(self) -> Logger:
+            logger = logging.getLogger(f"logger_{self._configId}_{self._cid}")
+            logger.setLevel(logging.INFO)
+
+            if logger.hasHandlers():
+                return logger  # 避免重复添加 handler
+
+            handler = RotatingFileHandler(
+                self._logPath,
+                maxBytes=5 * 1024 * 1024,
+                backupCount=2,
+                encoding="utf-8"
+            )
+            formatter = logging.Formatter(
+                "[%(asctime)s] [%(levelname)s] %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S"
+            )
+            handler.setFormatter(formatter)
+            logger.addHandler(handler)
+            return logger
+
+        def info(self, msg: str) -> None:
+            self._logger.info(msg)
+
+        def warn(self, msg: str) -> None:
+            self._logger.warning(msg)
+
+        def error(self, msg: str) -> None:
+            self._logger.error(msg)
+
+        async def log(self, msg: str, clis: Set[WebSocket]) -> None:
+            """ws发送日志, 并且记录到运行时内存和日志文件
+
+            Args:
+                msg (str): 日志内容
+                clis (Set[WebSocket]): 客户端
+            """
+            # 记录日志 RAM
+            self._msgListRef.append(msg)
+
+            # 记录日志 FILE
+            self.info(msg)
+
+            # 发送日志
+            await AllDmRequests._allClientsDo(clis, lambda ws: ws.send_json(WebSocketVo.log(msg)))
+
+
+    async def run(self, configId: str, taskId: str, cid: int):
         """开始爬取历史弹幕
 
         Args:
@@ -75,8 +138,8 @@ class AllDmRequests:
         """
         print("开始", taskId, cid)
         
-        path = GlobalConfig()._tasksIdPathMap[confifId]
-        GlobalConfig()._configIdToTaskIdMap[confifId] = taskId
+        path = GlobalConfig()._tasksIdPathMap[configId]
+        GlobalConfig()._configIdToTaskIdMap[configId] = taskId
 
         # 记录协程任务数据
         self._taskData[taskId] = AllDmRequests.TaskData(
@@ -105,15 +168,20 @@ class AllDmRequests:
         # 注意, 如果首尾出现 0, 我们需要手动处理
         taskConfig.activation() # 也就是活化一下数据, 但是这样前端展示的就是具体时间了哦
 
+        # 初始化日志
+        self._taskLog[taskId] = []
+
+        logProxy = AllDmRequests.LogProxy(configId, cid, self._taskLog[taskId])
+
         await self._allClientsDo(
                 self._clients[taskId], lambda ws: ws.send_json(
                     WebSocketVo.msg("taskConfig", taskConfig.toDict())))
 
         while self._taskData[taskId].isRun:
-            addDm = []
-            addId = set()
-            addDmCnt = 0
-            addSeniorDmCnt = 0
+            addDm = []          # 新增弹幕数据
+            addId = set()       # 新增id
+            addDmCnt = 0        # 新增弹幕数量
+            addSeniorDmCnt = 0  # 新增神弹幕 (高级/代码/Bas)
 
             maeTime: str =  TimeString.timestampToStr(taskConfig.currentTime)
 
@@ -126,9 +194,7 @@ class AllDmRequests:
                         )
                         return 0, resList
                     except:
-                        await self._allClientsDo(
-                            self._clients[taskId], lambda ws: ws.send_json(
-                                WebSocketVo.log(f"超时，重试中: {maeTime}")))
+                        await logProxy.log(f"超时，重试中: {maeTime}", self._clients[taskId])
                         await asyncio.sleep(random.uniform(
                             GlobalConfig().get().timer[0],
                             GlobalConfig().get().timer[1]))
@@ -141,9 +207,7 @@ class AllDmRequests:
                 break
 
             if (len(resList) == 0):
-                await self._allClientsDo(
-                    self._clients[taskId], lambda ws: ws.send_json(
-                        WebSocketVo.log(f"爬取: {maeTime}, 没有弹幕...")))
+                await logProxy.log(f"爬取: {maeTime}, 没有弹幕...", self._clients[taskId])
                 taskConfig.status = FetchStatus.FetchedHistoryOk
                 print("没有弹幕..., 好像完了")
                 break
@@ -173,18 +237,15 @@ class AllDmRequests:
             taskConfig.lastFetchTime = TimeString.getLocalTimestamp()
             taskConfigManager.save(taskConfig)
 
-            await self._allClientsDo(
-                self._clients[taskId], lambda ws: ws.send_json(WebSocketVo.log(
+            await logProxy.log(
                 f"爬取: {maeTime} 弹幕 {       \
                     taskConfig.totalDanmaku   \
                 } (+{addDmCnt}) | 神弹幕 {     \
                     taskConfig.advancedDanmaku\
-                    } (+{addSeniorDmCnt})")))
+                } (+{addSeniorDmCnt})", self._clients[taskId])
                 
-            await self._allClientsDo(
-                self._clients[taskId], lambda ws: ws.send_json(
-                    WebSocketVo.log(
-                        f"接下来爬取: {TimeString.timestampToStr(taskConfig.currentTime)}")))
+            await logProxy.log(f"接下来爬取: {TimeString.timestampToStr(taskConfig.currentTime)}",
+                               self._clients[taskId])
 
             # 让客户端更新数据预览
             await self._allClientsDo(
@@ -202,15 +263,14 @@ class AllDmRequests:
             await asyncio.sleep(random.uniform(GlobalConfig().get().timer[0], GlobalConfig().get().timer[1]))
 
         if (not self._taskData[taskId].isRun):
-            await self._allClientsDo(
-                self._clients[taskId], lambda ws: ws.send_json(
-                    WebSocketVo.log(f"已暂停")))
+            await logProxy.log(f"已暂停", self._clients[taskId])
             taskConfig.status = FetchStatus.PauseHistory
 
         await self._allClientsDo(
             self._clients[taskId], lambda ws: ws.send_json(
                 WebSocketVo.msg("taskConfig", taskConfig.toDict())))
 
+        # 清理
         GlobalConfig()._configIdToTaskIdMap.pop(taskConfig.configId)
         await self.delTask(taskId)
 

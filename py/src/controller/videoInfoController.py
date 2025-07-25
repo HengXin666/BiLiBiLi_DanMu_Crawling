@@ -15,6 +15,14 @@ class UrlVo(BaseModel):
 
 @videoInfoController.post("/getVideoPartList", response_class=ResponseModel[VideoPartListVo])
 def getVideoPartList(urlVo: UrlVo):
+    """查询cid
+
+    Args:
+        urlVo (UrlVo): url 或者 cid=\\d+
+
+    Returns:
+        _type_: 视频元数据
+    """
     err, resList = VideoApi.getCidPart(urlVo.url)
     if (err == 0):
         return ResponseModel.success({
