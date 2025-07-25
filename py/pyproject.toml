@@ -1,0 +1,13 @@
+[project]
+name = "py"
+version = "2.0.0-Beta"
+description = "B站全弹幕爬虫"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.116.1",
+    "orjson>=3.11.0",
+    "protobuf>=6.31.1",
+    "requests>=2.32.4",
+    "uvicorn[standard]>=0.35.0",
+]
