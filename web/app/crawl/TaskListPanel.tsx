@@ -38,8 +38,9 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
   const [manageMode, setManageMode] = useState(false);
   const [checkedTaskSet, setCheckedTaskSet] = useState<Set<string>>(new Set());
 
-  const [logMap, setLogMap] = useState<Record<number, LogEntry[]>>({});
-  const [logOpenMap, setLogOpenMap] = useState<Record<number, boolean>>({});
+  // 日志: configId -> msgList
+  const [logMap, setLogMap] = useState<Record<string, LogEntry[]>>({});
+  const [logOpenMap, setLogOpenMap] = useState<Record<string, boolean>>({});
   const [loadingConfig, setLoadingConfig] = useState(false);
 
   const [taskConfigData, setTaskConfigData] = useState<TaskConfig | null>(null);
@@ -130,14 +131,14 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
     }
   };
 
-  const appendLog = (cid: number, message: string) => {
+  const appendLog = (configId: string, message: string) => {
     setLogMap((prev) => {
       const time = DateTime.local().toFormat("HH:mm:ss");
       const newLog: LogEntry = { time, message };
-      const prevLogs = prev[cid] || [];
+      const prevLogs = prev[configId] || [];
       return {
         ...prev,
-        [cid]: [...prevLogs.slice(-49), newLog], // 保留最多50条
+        [configId]: [...prevLogs.slice(-49), newLog], // 保留最多50条
       };
     });
   };
@@ -162,11 +163,10 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
 
       ws.onmessage = (event: MessageEvent<string>) => {
         try {
-          console.log("解析前:", event.data);
           const msg: ServerMessage = JSON.parse(event.data);
           
           if (msg.type === "log") {
-            appendLog(cid, msg.data);
+            appendLog(configId, msg.data);
           } else if (msg.type === "taskConfig") {
             console.log("设置了啊");
             
@@ -174,9 +174,6 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
           } else {
             console.warn(`未知消息类型: ${msg}`);
           }
-
-          console.log(msg)
-
         } catch (e) {
           console.error("消息格式错误", e, event.data);
         }
@@ -231,7 +228,7 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
         const msg: ServerMessage = JSON.parse(event.data);
         
         if (msg.type === "log") {
-          appendLog(task.cid, msg.data);
+          appendLog(task.configId, msg.data);
         } else if (msg.type === "taskConfig") {
           replaceTaskByConfigId(msg.data);
         } else {
@@ -269,10 +266,13 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
 
     taskIdCidMap.delete(task.configId);
 
-    if (wsMap.current[task.cid]) {
-      wsMap.current[task.cid].close();
-      delete wsMap.current[task.cid];
-    }
+    // 等待服务器关闭 ws, 而不是本地, 否则会结束不到服务器 呜呼
+    // if (wsMap.current[task.cid]) {
+    //   wsMap.current[task.cid].close();
+    //   delete wsMap.current[task.cid];
+    // }
+
+    toast.success("已暂停任务");
 
     fetchTasks();
   };
@@ -300,10 +300,10 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
     fetchTasks();
   };
 
-  const toggleLogOpen = (cid: number) => {
+  const toggleLogOpen = (configId: string) => {
     setLogOpenMap((prev) => ({
       ...prev,
-      [cid]: !prev[cid],
+      [configId]: !prev[configId],
     }));
   };
 
@@ -334,11 +334,11 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
                       <strong>上次执行:</strong> {formatTimestamp(task.lastFetchTime)}
                     </div>
                     <div className="mt-2 border rounded p-2 bg-black text-green-400 text-xs font-mono max-h-40 overflow-y-auto cursor-pointer"
-                      onClick={() => toggleLogOpen(task.cid)}>
-                      {logOpenMap[task.cid]
+                      onClick={() => toggleLogOpen(task.configId)}>
+                      {logOpenMap[task.configId]
                         ? (
                           <ScrollShadow hideScrollBar className="max-h-40">
-                            {logMap[task.cid]?.map((log, idx) => (
+                            {logMap[task.configId]?.map((log, idx) => (
                               <div key={idx}>
                                 [{log.time}] {log.message}
                               </div>
@@ -346,8 +346,8 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
                           </ScrollShadow>
                         ) : (
                           <div>
-                            {logMap[task.cid]?.length
-                              ? `[${logMap[task.cid][logMap[task.cid].length - 1].time}] ${logMap[task.cid][logMap[task.cid].length - 1].message}`
+                            {logMap[task.configId]?.length
+                              ? `[${logMap[task.configId][logMap[task.configId].length - 1].time}] ${logMap[task.configId][logMap[task.configId].length - 1].message}`
                               : "暂无日志 (点击展开)"}
                           </div>
                         )}

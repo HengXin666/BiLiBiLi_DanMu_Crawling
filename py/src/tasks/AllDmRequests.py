@@ -177,6 +177,53 @@ class AllDmRequests:
                 self._clients[taskId], lambda ws: ws.send_json(
                     WebSocketVo.msg("taskConfig", taskConfig.toDict())))
 
+        # === Begin === 爬取 Bas 弹幕 === Begin ===
+        async def getBasDanMaKu() -> Tuple[int, List[DanmakuElem]]:
+            for _ in range(5):
+                try:
+                    resList = api.getBasDanMaKu(
+                        cid=taskConfig.cid
+                    )
+                    return 0, resList
+                except:
+                    await logProxy.log(f"超时，重试中: {maeTime}", self._clients[taskId])
+                    await asyncio.sleep(random.uniform(
+                        GlobalConfig().get().timer[0],
+                        GlobalConfig().get().timer[1]))
+            return -1, []
+
+        addDm = []          # 新增弹幕数据
+        addId = set()       # 新增id
+        addDmCnt = 0        # 新增弹幕数量
+        addSeniorDmCnt = 0  # 新增神弹幕 (高级/代码/Bas)
+        
+        err, resList = await getBasDanMaKu()
+
+        for it in resList:
+            if (it.id not in idSet):
+                addDm.append(it)
+                idSet.add(it.id)
+                addId.add(it.id)
+                addDmCnt += 1
+
+                # it.mode >= 7 是高级弹幕, 代码弹幕, Bas弹幕, 统称神弹幕
+                addSeniorDmCnt += (it.mode >= 7)
+
+        danmakuIdStorage.insertDmOnlyId(addId)
+        danmakuElemStorage.insertDanMaKu(addDm)
+
+        taskConfig.advancedDanmaku += addSeniorDmCnt
+        taskConfig.totalDanmaku += addDmCnt
+
+        if (err != 0):
+            taskConfig.status = FetchStatus.BanHistory
+            self._taskData[taskId].isRun = False
+            await logProxy.log(f"爬取 Bas 弹幕专包出错! 已经停止弹幕爬取...", self._clients[taskId])
+        else:
+            await logProxy.log(f"爬取 Bas 弹幕专包完成! 新增弹幕 {addDmCnt}, 神弹幕 {addSeniorDmCnt} 条!", self._clients[taskId])
+            await logProxy.log(f"开始爬取历史弹幕...", self._clients[taskId])
+        # === End === 爬取 Bas 弹幕 === End ===
+
         while self._taskData[taskId].isRun:
             addDm = []          # 新增弹幕数据
             addId = set()       # 新增id
@@ -185,7 +232,7 @@ class AllDmRequests:
 
             maeTime: str =  TimeString.timestampToStr(taskConfig.currentTime)
 
-            async def getDanMaKuReq() -> Tuple[int, List[DanmakuElem]]:
+            async def getHistoricalDanMaKu() -> Tuple[int, List[DanmakuElem]]:
                 for _ in range(5):
                     try:
                         resList = api.getHistoricalDanMaKu(
@@ -200,7 +247,7 @@ class AllDmRequests:
                             GlobalConfig().get().timer[1]))
                 return -1, []
 
-            err, resList = await getDanMaKuReq()
+            err, resList = await getHistoricalDanMaKu()
 
             if (err != 0):
                 taskConfig.status = FetchStatus.BanHistory

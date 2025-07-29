@@ -107,7 +107,7 @@ class DanMaKuApi:
         )
         return self._deserializeDanMaKu(resp.content)
 
-    def getBasDanMaKu(self, cid: int) -> list[tuple]:
+    def getBasDanMaKu(self, cid: int) -> list[DanmakuElem]:
         """
         获取BAS弹幕专包
         """
@@ -120,7 +120,7 @@ class DanMaKuApi:
         )
         target = BasDanmaku.DmWebViewReply() # type: ignore
         target.ParseFromString(data.content)
-        res = []
+        res: List[DanmakuElem] = []
         for i_url in target.specialDms:
             # 使用普通分段包弹幕的proto结构体反序列化此bin数据
             res.extend(

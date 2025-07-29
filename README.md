@@ -93,7 +93,20 @@ py 爬取流程: [使用后向爬取] https://github.com/HengXin666/BiLiBiLi_Dan
           |    ...
           |- 现代C++
                 | - 01- xxx
-            
+
+爬取阶段:
+    爬取 BAS 弹幕专包 -> 爬取历史弹幕 (从新到旧) -> 结束
+    
+    // @todo
+    结束后, 提供两种选择:
+        1. 补充 爬取历史弹幕 (用于长时间没有爬取, 又不希望重新爬取)
+            - (1) 扫描本地弹幕数据库中最晚(最新)的弹幕的日期. 作为 [L, R] 的 L
+            - (2) 重置配置文件的 currentTime 字段为 0 或者如果用户设置了 右边界 (R) 则取 min(R, 当前时间)
+        2. 检测实时弹幕
+            - 通过以小时 (应该补充为配置文件的配置项) (全局配置 and 个别配置) 为间隔
+            - 爬取实时弹幕, 按照视频分片. 这样获取到的弹幕池是以 视频的 6 min 为区间获取的
+            - 如果一天中新增的弹幕过多, 比如这天新增了 1w 条弹幕, 那显然是不可能完全出现在历史弹幕池的
+            - 有弹幕被溢出而丢弃了. 而实时弹幕池就可以很好的爬取到 (应该)
 ```
 
 ## 二、预览图
@@ -146,6 +159,12 @@ py 爬取流程: [使用后向爬取] https://github.com/HengXin666/BiLiBiLi_Dan
 [![Forkers repo roster for @HengXin666/BiLiBiLi_DanMu_Crawling](https://reporoster.com/forks/HengXin666/BiLiBiLi_DanMu_Crawling)](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/network/members)
 
 ## 八、更新日志
+
+- [2025-07-29 10:36:31] [V2.0.0-Beta_14] 
+    1. 修复: ([#25](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/issues/25)) `同cid的不同任务会显示相同的任务日志(连接到了相同的ws端内容)`, 原因是前端的 LogHashMap 依然是以cid为key, 而不是cid.
+    2. 实装Bas弹幕专包爬取在协程工作函数中
+    3. 为前端暂停时候新增输出, 并且修改为被动退出 (即发生关闭给服务器后, 让服务器关闭ws, 以防止缺少信息...)
+    4. 新增对 `前的策略下若某天爬取完成，之后无法更新弹` 描述的架构于临时架构说明...
 
 - [2025-07-25 23:07:45] [V2.0.0-Beta_13] [#25](https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling/issues/25): ` ws后端传输缺失：当开始一个任务后，第一次爬取的日期不会显示在web端而仅会出现在后端log`; 现在为后端新增一个 运行时消息队列, 如果前端消息小于该队列, 则补充消息; 并且提供文件日志, 不同推送ws, 仅供查看. 命名为 `{cid}_log.log`. 新增一个接口.
 
