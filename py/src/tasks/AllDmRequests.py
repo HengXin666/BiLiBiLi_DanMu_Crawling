@@ -158,7 +158,6 @@ class AllDmRequests:
         # 创建 & 读取 配置
         taskConfigManager = TaskConfigManager(Path(f"{path}/{cid}_config.json"))
         taskConfig = taskConfigManager.load()
-        taskConfig.status = FetchStatus.FetchingHistory
 
         danmakuIdStorage = DanmakuIdStorage(Path(f"{path}/{cid}_dm_id.db"))
         idSet = danmakuIdStorage.selectAllDmOnlyId()
@@ -172,6 +171,16 @@ class AllDmRequests:
         self._taskLog[taskId] = []
 
         logProxy = AllDmRequests.LogProxy(configId, cid, self._taskLog[taskId])
+
+        # 如果之前已经爬取完毕历史弹幕了 => [补充 爬取历史弹幕]
+        if (taskConfig.status == FetchStatus.FetchedHistoryOk):
+            # (1) 扫描本地弹幕数据库中最晚(最新)的弹幕的日期. 作为 [L, R] 的 L
+            taskConfig.range = (danmakuElemStorage.selectLatestCtime(), TimeString.getLocalTimestamp())
+            # (2) 重置配置文件的 currentTime 字段为 R
+            taskConfig.currentTime = taskConfig.range[1]
+            await logProxy.log(f"设置: [补充 爬取历史弹幕] 区间: {TimeString.timestampToStr(taskConfig.range[0])} ~ {TimeString.timestampToStr(taskConfig.range[1])}", self._clients[taskId])
+        
+        taskConfig.status = FetchStatus.FetchingHistory
 
         await self._allClientsDo(
                 self._clients[taskId], lambda ws: ws.send_json(
@@ -224,6 +233,7 @@ class AllDmRequests:
             await logProxy.log(f"开始爬取历史弹幕...", self._clients[taskId])
         # === End === 爬取 Bas 弹幕 === End ===
 
+        # === Begin === 爬取历史弹幕 === Begin ===
         while self._taskData[taskId].isRun:
             addDm = []          # 新增弹幕数据
             addId = set()       # 新增id
@@ -290,7 +300,13 @@ class AllDmRequests:
                 } (+{addDmCnt}) | 神弹幕 {     \
                     taskConfig.advancedDanmaku\
                 } (+{addSeniorDmCnt})", self._clients[taskId])
-                
+
+            # 判断是否过了左边界, 过了则是爬取完毕!
+            if (taskConfig.currentTime < taskConfig.range[0]):
+                taskConfig.status = FetchStatus.FetchedHistoryOk
+                await logProxy.log("爬取完毕! 已到达左边界!", self._clients[taskId])
+                break
+
             await logProxy.log(f"接下来爬取: {TimeString.timestampToStr(taskConfig.currentTime)}",
                                self._clients[taskId])
 
@@ -308,6 +324,7 @@ class AllDmRequests:
             print(f"接下来爬取: {TimeString.timestampToStr(taskConfig.currentTime)}")
 
             await asyncio.sleep(random.uniform(GlobalConfig().get().timer[0], GlobalConfig().get().timer[1]))
+        # === End === 爬取历史弹幕 === End ===
 
         if (not self._taskData[taskId].isRun):
             await logProxy.log(f"已暂停", self._clients[taskId])

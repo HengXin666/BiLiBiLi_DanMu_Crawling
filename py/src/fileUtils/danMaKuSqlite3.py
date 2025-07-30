@@ -31,6 +31,8 @@ class DanmakuElemStorage:
                 colorful INTEGER
             )
         ''')
+        # 为 ctime 建立索引, 方便在找 max ctime 的时候查询的时间复杂度为 O(1) or O(logn)
+        self.conn.execute('CREATE INDEX IF NOT EXISTS idx_danmaku_ctime ON danmaku(ctime)')
         self.conn.commit()
 
     def insertDanMaKu(self, elems: List[DanmakuElem]):
@@ -92,6 +94,16 @@ class DanmakuElemStorage:
                 colorful=DmColorfulType(row[14]) if row[14] is not None else None
             ))
         return result
+    
+    def selectLatestCtime(self) -> int:
+        """查询最大的 ctime (最新弹幕时间戳)
+
+        Returns:
+            int: 最大的 ctime 值
+        """
+        cursor = self.conn.execute('SELECT MAX(ctime) FROM danmaku')
+        row = cursor.fetchone()
+        return row[0] if row and row[0] is not None else 0
 
 class DanmakuIdStorage:
     """存储弹幕唯一id 要求: 传入的是已经去重的id """

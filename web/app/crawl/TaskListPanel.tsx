@@ -190,6 +190,9 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
           wsMap.current[cid].close();
           delete wsMap.current[cid];
         }
+        if (taskIdCidMap.has(configId)) {
+          taskIdCidMap.delete(configId);
+        }
       };
 
       toast.info(`连接到: configId = ${configId}`)
@@ -249,6 +252,9 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
       if (wsMap.current[task.cid]) {
         wsMap.current[task.cid].close();
         delete wsMap.current[task.cid];
+      }
+      if (taskIdCidMap.has(task.configId)) {
+        taskIdCidMap.delete(task.configId);
       }
     };
 
