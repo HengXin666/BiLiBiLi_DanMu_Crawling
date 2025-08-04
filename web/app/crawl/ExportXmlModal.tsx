@@ -74,7 +74,7 @@ export function ExportXmlModal({
       const url = URL.createObjectURL(blob);
 
       if (dmHandel) {
-        router.push(`/dmHandle?url=${url}&fn=${filename}`);
+        router.push(`/dmHandle?url=${url}&fn=${fileName}`);
       } else {
         const link = document.createElement("a");
 
