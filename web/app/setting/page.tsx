@@ -1,21 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { title } from "@/components/primitives";
-import {
-  Input,
-  Button,
-  Card,
-  CardBody,
-  CardHeader,
-} from "@nextui-org/react";
-import { Slider } from "@nextui-org/slider";
+import { Input, Button, Card, CardBody, CardHeader } from "@heroui/react";
+import { Slider } from "@heroui/react";
 import { toast } from "sonner";
 import { Trash, Plus } from "lucide-react";
+
+import { title } from "@/components/primitives";
 import { BACKEND_URL } from "@/config/env";
 
 // 可增删的 Cookies 组件
-function CookiesConfig ({
+function CookiesConfig({
   cookies,
   setCookies,
 }: {
@@ -24,12 +19,14 @@ function CookiesConfig ({
 }) {
   const handleChange = (index: number, value: string) => {
     const newCookies = [...cookies];
+
     newCookies[index] = value;
     setCookies(newCookies);
   };
 
   const handleDelete = (index: number) => {
     const newCookies = cookies.filter((_, i) => i !== index);
+
     setCookies(newCookies);
   };
 
@@ -44,15 +41,15 @@ function CookiesConfig ({
         {cookies.map((cookie, index) => (
           <div key={index} className="flex items-center gap-2">
             <Input
+              className="flex-1"
+              placeholder={`Cookie #${index + 1}`}
               value={cookie}
               onChange={(e) => handleChange(index, e.target.value)}
-              placeholder={`Cookie #${index + 1}`}
-              className="flex-1"
             />
             <Button
               isIconOnly
-              size="sm"
               color="danger"
+              size="sm"
               onPress={() => handleDelete(index)}
             >
               <Trash size={16} />
@@ -61,8 +58,8 @@ function CookiesConfig ({
         ))}
         <Button
           size="sm"
-          variant="flat"
           startContent={<Plus size={16} />}
+          variant="flat"
           onPress={handleAdd}
         >
           添加 Cookie
@@ -77,14 +74,14 @@ interface MainConfig {
   timer: [number, number];
 }
 
-export default function SettingPage () {
+export default function SettingPage() {
   const [cookies, setCookies] = useState<string[]>([]);
   const [timerRange, setTimerRange] = useState<[number, number]>([5, 10]);
 
   // 提交配置
   const handleSave = async () => {
     const cfg: MainConfig = {
-      cookies: cookies.filter(s => s.trim() !== ""),
+      cookies: cookies.filter((s) => s.trim() !== ""),
       timer: timerRange,
     };
 
@@ -108,8 +105,10 @@ export default function SettingPage () {
     try {
       const res = await fetch(`${BACKEND_URL}/mainConfig/getConfig`);
       const data = await res.json();
+
       if (data.code === 0) {
         const cfg: MainConfig = data.data as MainConfig;
+
         setCookies(cfg.cookies);
         setTimerRange(cfg.timer);
       } else {
@@ -131,6 +130,7 @@ export default function SettingPage () {
         headers: { "Content-Type": "application/json" },
       });
       const result = await res.json();
+
       if (result.code === 0) {
         toast.success("读取成功");
         // 重新拉取最新配置，刷新界面
@@ -154,17 +154,21 @@ export default function SettingPage () {
           <div className="text-left">
             爬取间隔 (秒)
             <br />
-            <span style={{
-              "color": "violet",
-              "fontSize": 14
-            }}>如果只有一个凭证, 不建议间隔低于5秒</span>
+            <span
+              style={{
+                color: "violet",
+                fontSize: 14,
+              }}
+            >
+              如果只有一个凭证, 不建议间隔低于5秒
+            </span>
           </div>
         </CardHeader>
         <CardBody>
           <Slider
             label="范围"
-            minValue={1}
             maxValue={20}
+            minValue={1}
             step={1}
             value={timerRange}
             onChange={(val) => setTimerRange(val as [number, number])}
@@ -175,11 +179,12 @@ export default function SettingPage () {
         </CardBody>
       </Card>
 
-      <Button color="primary" className="mt-6 w-full" onPress={handleSave}>
+      <Button className="mt-6 w-full" color="primary" onPress={handleSave}>
         保存配置
       </Button>
-      <Button color="warning" className="mt-6 w-full" onPress={handleReRead}>
-        从<code>文件系统</code><b>重新读取</b>配置文件
+      <Button className="mt-6 w-full" color="warning" onPress={handleReRead}>
+        从<code>文件系统</code>
+        <b>重新读取</b>配置文件
       </Button>
     </div>
   );
