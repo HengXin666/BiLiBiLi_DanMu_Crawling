@@ -186,9 +186,14 @@ export default function DmHandlePage() {
 
       <Divider />
       {(dmPool.dans.length > 0 && !dmPool.info.fromConverted) || (
-        <Button color="primary" onPress={importDm}>
-          读取弹幕
-        </Button>
+        <>
+          <Button color="primary" onPress={importDm}>
+            读取弹幕
+          </Button>
+          <p className="text-sm text-gray-400">
+            可选择弹幕类型以筛选文件，也可选择全部文件挑选文件。
+          </p>
+        </>
       )}
       {dmPool.dans.length > 0 && (
         <>
@@ -343,7 +348,7 @@ export default function DmHandlePage() {
                           title: fileName,
                           raw: { compressType: "gzip", baseType: "base18384" },
                         }),
-                        "ass",
+                        "ass"
                       );
                     }}
                   >
@@ -373,7 +378,7 @@ export default function DmHandlePage() {
                       onPress={() => {
                         startDownload(
                           JSON.stringify(dmPool.toDplayer()),
-                          "json",
+                          "json"
                         );
                       }}
                     >
@@ -384,7 +389,7 @@ export default function DmHandlePage() {
                       onPress={() => {
                         startDownload(
                           JSON.stringify(dmPool.toArtplayer()),
-                          "json",
+                          "json"
                         );
                       }}
                     >
@@ -395,7 +400,7 @@ export default function DmHandlePage() {
                       onPress={() => {
                         startDownload(
                           JSON.stringify(dmPool.toDDplay()),
-                          "json",
+                          "json"
                         );
                       }}
                     >
