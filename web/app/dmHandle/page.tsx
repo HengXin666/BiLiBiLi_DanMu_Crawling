@@ -117,7 +117,6 @@ export default function DmHandlePage() {
         }
       } else if (ext === "json") {
         try {
-          // console.log(await file.text());
           const imp = UniPool.import(await file.text());
 
           setFileType(imp.fmt);
@@ -348,7 +347,7 @@ export default function DmHandlePage() {
                           title: fileName,
                           raw: { compressType: "gzip", baseType: "base18384" },
                         }),
-                        "ass"
+                        "ass",
                       );
                     }}
                   >
@@ -378,7 +377,7 @@ export default function DmHandlePage() {
                       onPress={() => {
                         startDownload(
                           JSON.stringify(dmPool.toDplayer()),
-                          "json"
+                          "json",
                         );
                       }}
                     >
@@ -389,7 +388,7 @@ export default function DmHandlePage() {
                       onPress={() => {
                         startDownload(
                           JSON.stringify(dmPool.toArtplayer()),
-                          "json"
+                          "json",
                         );
                       }}
                     >
@@ -400,7 +399,7 @@ export default function DmHandlePage() {
                       onPress={() => {
                         startDownload(
                           JSON.stringify(dmPool.toDDplay()),
-                          "json"
+                          "json",
                         );
                       }}
                     >
