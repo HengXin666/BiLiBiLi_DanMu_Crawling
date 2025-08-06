@@ -1,9 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Input, Button, CheckboxGroup, Checkbox, Card, DatePicker } from "@nextui-org/react";
+import {
+  Input,
+  Button,
+  CheckboxGroup,
+  Checkbox,
+  Card,
+  DatePicker,
+} from "@heroui/react";
 import { toast } from "sonner";
 import { DateValue, getLocalTimeZone, today } from "@internationalized/date";
+
 import { BACKEND_URL } from "@/config/env";
 
 interface VideoPart {
@@ -23,23 +31,29 @@ interface TaskAddPanelProps {
   isInModal?: boolean;
 }
 
-function isValidTaskName (name: string): boolean {
+function isValidTaskName(name: string): boolean {
   return !/[\/\\\*\?\<\>\|":]/.test(name);
 }
 
-export function TaskAddPanel ({ onSuccess, isInModal = false }: TaskAddPanelProps) {
+export function TaskAddPanel({
+  onSuccess,
+  isInModal = false,
+}: TaskAddPanelProps) {
   const [taskName, setTaskName] = useState<string>("");
   const [urlOrCid, setUrlOrCid] = useState<string>("");
   const [parts, setParts] = useState<VideoPart[]>([]);
   const [selectedParts, setSelectedParts] = useState<number[]>([]);
 
   const [useDefaultRange, setUseDefaultRange] = useState(true);
-  const [startTime, setStartTime] = useState<DateValue>(today(getLocalTimeZone()));
+  const [startTime, setStartTime] = useState<DateValue>(
+    today(getLocalTimeZone()),
+  );
   const [endTime, setEndTime] = useState<DateValue>(today(getLocalTimeZone()));
 
   const handleFetchParts = async (): Promise<void> => {
     if (!urlOrCid.trim()) {
       toast.error("请输入 URL 或 CID");
+
       return;
     }
 
@@ -68,9 +82,21 @@ export function TaskAddPanel ({ onSuccess, isInModal = false }: TaskAddPanelProp
       return [0, 0];
     }
 
-    const toBiliTimestamp = (year: number, month: number, day: number, hour: number, minute: number, second: number): number => {
+    const toBiliTimestamp = (
+      year: number,
+      month: number,
+      day: number,
+      hour: number,
+      minute: number,
+      second: number,
+    ): number => {
       // Date.UTC 返回的是 UTC 时间，B站使用东八区时间
-      return Math.floor(Date.UTC(year, month - 1, day, hour, minute, second) / 1000) - 8 * 3600;
+      return (
+        Math.floor(
+          Date.UTC(year, month - 1, day, hour, minute, second) / 1000,
+        ) -
+        8 * 3600
+      );
     };
 
     return [
@@ -82,16 +108,19 @@ export function TaskAddPanel ({ onSuccess, isInModal = false }: TaskAddPanelProp
   const handleInitTaskConfig = async (): Promise<void> => {
     if (!taskName.trim()) {
       toast.error("请输入任务名称");
+
       return;
     }
 
     if (!isValidTaskName(taskName)) {
-      toast.error("任务名称包含非法字符：/ \\ * ? < > | \" :");
+      toast.error('任务名称包含非法字符：/ \\ * ? < > | " :');
+
       return;
     }
 
     if (parts.length === 0) {
       toast.error("请先获取分P列表");
+
       return;
     }
 
@@ -127,7 +156,7 @@ export function TaskAddPanel ({ onSuccess, isInModal = false }: TaskAddPanelProp
     }
   };
 
-    return (
+  return (
     <Card
       className={
         isInModal ? "space-y-4 p-4 shadow-none bg-transparent" : "p-4 space-y-4"
@@ -168,8 +197,8 @@ export function TaskAddPanel ({ onSuccess, isInModal = false }: TaskAddPanelProp
       <div className="flex flex-col gap-3">
         <Checkbox
           isSelected={useDefaultRange}
-          onChange={(e) => setUseDefaultRange(e.target.checked)}
           size="md"
+          onChange={(e) => setUseDefaultRange(e.target.checked)}
         >
           爬取全弹幕
         </Checkbox>
@@ -177,20 +206,20 @@ export function TaskAddPanel ({ onSuccess, isInModal = false }: TaskAddPanelProp
         {!useDefaultRange && (
           <div className="flex gap-4">
             <DatePicker
+              isRequired
+              className="flex-grow"
+              granularity="day"
               label="开始时间"
               value={startTime}
               onChange={setStartTime}
-              granularity="day"
-              isRequired
-              className="flex-grow"
             />
             <DatePicker
+              isRequired
+              className="flex-grow"
+              granularity="day"
               label="结束时间"
               value={endTime}
               onChange={setEndTime}
-              granularity="day"
-              isRequired
-              className="flex-grow"
             />
           </div>
         )}

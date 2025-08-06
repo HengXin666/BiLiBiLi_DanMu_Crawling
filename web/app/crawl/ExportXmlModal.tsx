@@ -10,7 +10,7 @@ import {
   Input,
   Checkbox,
   ModalContent,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { useRouter } from "next/navigation";
 
 import { BACKEND_URL } from "@/config/env";

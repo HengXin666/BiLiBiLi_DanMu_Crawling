@@ -12,8 +12,13 @@ import {
   Input,
   Checkbox,
   DatePicker,
-} from "@nextui-org/react";
-import { CalendarDate, DateValue, getLocalTimeZone, today } from "@internationalized/date";
+} from "@heroui/react";
+import {
+  CalendarDate,
+  DateValue,
+  getLocalTimeZone,
+  today,
+} from "@internationalized/date";
 
 export interface TaskConfig {
   configId: string;
@@ -35,15 +40,25 @@ interface TaskConfigModalProps {
   onSave: (config: TaskConfig) => Promise<void>;
 }
 
-function toDateValue (timestamp: number): DateValue | null {
+function toDateValue(timestamp: number): DateValue | null {
   if (timestamp === 0) return null;
   const dt = new Date(timestamp * 1000);
+
   return new CalendarDate(dt.getFullYear(), dt.getMonth() + 1, dt.getDate());
 }
 
-function toTimestamp (date: DateValue | null, isEnd: boolean = false): number {
+function toTimestamp(date: DateValue | null, isEnd: boolean = false): number {
   if (!date) return 0;
-  const ts = Date.UTC(date.year, date.month - 1, date.day, isEnd ? 23 : 0, isEnd ? 59 : 0, isEnd ? 59 : 0) / 1000;
+  const ts =
+    Date.UTC(
+      date.year,
+      date.month - 1,
+      date.day,
+      isEnd ? 23 : 0,
+      isEnd ? 59 : 0,
+      isEnd ? 59 : 0,
+    ) / 1000;
+
   return ts - 8 * 3600;
 }
 
@@ -62,12 +77,15 @@ export const TaskConfigModal: React.FC<TaskConfigModalProps> = ({
 }) => {
   const [title, setTitle] = useState("");
   const [useDefaultRange, setUseDefaultRange] = useState(true);
-  const [startTime, setStartTime] = useState<DateValue>(today(getLocalTimeZone()));
+  const [startTime, setStartTime] = useState<DateValue>(
+    today(getLocalTimeZone()),
+  );
   const [endTime, setEndTime] = useState<DateValue>(today(getLocalTimeZone()));
 
   useEffect(() => {
     if (!configData) return;
     const [startTs, endTs] = configData.range;
+
     setTitle(configData.title);
     setUseDefaultRange(startTs === 0 && endTs === 0);
     setStartTime(toDateValue(startTs) ?? today(getLocalTimeZone()));
@@ -79,11 +97,12 @@ export const TaskConfigModal: React.FC<TaskConfigModalProps> = ({
     const newRange: [number, number] = useDefaultRange
       ? [0, 0]
       : [toTimestamp(startTime, false), toTimestamp(endTime, true)];
+
     await onSave({ ...configData, title, range: newRange });
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="md" isDismissable={false}>
+    <Modal isDismissable={false} isOpen={isOpen} size="md" onClose={onClose}>
       <ModalContent>
         <ModalHeader>任务配置管理</ModalHeader>
         <ModalBody>
@@ -92,12 +111,17 @@ export const TaskConfigModal: React.FC<TaskConfigModalProps> = ({
           ) : (
             <div className="space-y-4">
               <div>cid: {configData.cid}</div>
-              <Input label="标题" value={title} onChange={e => setTitle(e.target.value)} fullWidth />
+              <Input
+                fullWidth
+                label="标题"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
               <div className="flex flex-col gap-3">
                 <Checkbox
                   isSelected={useDefaultRange}
-                  onChange={(e) => setUseDefaultRange(e.target.checked)}
                   size="md"
+                  onChange={(e) => setUseDefaultRange(e.target.checked)}
                 >
                   爬取全弹幕
                 </Checkbox>
@@ -106,20 +130,20 @@ export const TaskConfigModal: React.FC<TaskConfigModalProps> = ({
                 {!useDefaultRange && (
                   <div className="flex gap-4">
                     <DatePicker
+                      isRequired
+                      className="flex-grow"
+                      granularity="day"
                       label="开始时间"
                       value={startTime}
                       onChange={setStartTime}
-                      granularity="day"
-                      isRequired
-                      className="flex-grow"
                     />
                     <DatePicker
+                      isRequired
+                      className="flex-grow"
+                      granularity="day"
                       label="结束时间"
                       value={endTime}
                       onChange={setEndTime}
-                      granularity="day"
-                      isRequired
-                      className="flex-grow"
                     />
                   </div>
                 )}
@@ -128,8 +152,14 @@ export const TaskConfigModal: React.FC<TaskConfigModalProps> = ({
           )}
         </ModalBody>
         <ModalFooter>
-          <Button onPress={onClose} color="secondary">取消</Button>
-          <Button color="primary" onPress={handleSaveClick} disabled={loading || !configData}>
+          <Button color="secondary" onPress={onClose}>
+            取消
+          </Button>
+          <Button
+            color="primary"
+            disabled={loading || !configData}
+            onPress={handleSaveClick}
+          >
             保存
           </Button>
         </ModalFooter>

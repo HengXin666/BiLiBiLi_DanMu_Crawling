@@ -1,6 +1,8 @@
+"use client";
+
 import { Link } from "@heroui/link";
-import { Snippet } from "@heroui/snippet";
-import { Code } from "@heroui/code";
+import { Snippet } from "@heroui/react";
+import { Code } from "@heroui/react";
 import { button as buttonStyles } from "@heroui/theme";
 
 import { siteConfig } from "@/config/site";

@@ -7,13 +7,15 @@ import {
   Card,
   Button,
   ScrollShadow,
-} from "@nextui-org/react";
-import { BACKEND_URL } from "@/config/env";
-import { TaskConfigModal, TaskConfig } from "./TaskConfigModal";
+} from "@heroui/react";
 import { DateTime } from "luxon";
 import { toast } from "sonner";
-import { ExportXmlModal } from "./ExportXmlModal";
 import { Hammer, Trash2 } from "lucide-react";
+
+import { ExportXmlModal } from "./ExportXmlModal";
+import { TaskConfigModal, TaskConfig } from "./TaskConfigModal";
+
+import { BACKEND_URL } from "@/config/env";
 
 interface AllTaskData {
   mainTitle: string;
@@ -21,6 +23,7 @@ interface AllTaskData {
 }
 
 let taskIdCidMap: Map<string, string> = new Map<string, string>();
+
 interface LogEntry {
   time: string;
   message: string;
@@ -30,9 +33,11 @@ type ServerMessage =
   | { type: "log"; data: string }
   | { type: "taskConfig"; data: TaskConfig };
 
-export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
+export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
   const [taskList, setTaskList] = useState<AllTaskData[]>([]);
-  const configIdIndexMap = useRef<Map<string, { groupIndex: number; taskIndex: number }>>(new Map());
+  const configIdIndexMap = useRef<
+    Map<string, { groupIndex: number; taskIndex: number }>
+  >(new Map());
 
   // 删除
   const [manageMode, setManageMode] = useState(false);
@@ -54,13 +59,15 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
   const [exportFileName, setExportFileName] = useState<string>("");
 
   const toggleTaskSelect = (configId: string) => {
-    setCheckedTaskSet(prev => {
+    setCheckedTaskSet((prev) => {
       const newSet = new Set(prev);
+
       if (newSet.has(configId)) {
         newSet.delete(configId);
       } else {
         newSet.add(configId);
       }
+
       return newSet;
     });
   };
@@ -79,6 +86,7 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
 
   const replaceTaskByConfigId = (newTask: TaskConfig) => {
     const ref = configIdIndexMap.current.get(newTask.configId);
+
     if (!ref) return;
 
     setTaskList((prev) => {
@@ -97,12 +105,13 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
   const fetchTasks = async () => {
     const res = await fetch(`${BACKEND_URL}/allDm/getAllTaskData`);
     const json = await res.json();
+
     setTaskList(json.data);
     buildConfigIdIndexMap(json.data);
   };
 
   const handleOpenExport = (configId: string, cid: number, title: string) => {
-    setExportConfigId(configId)
+    setExportConfigId(configId);
     setExportCid(cid);
     setExportFileName(title);
     setIsExportModalOpen(true);
@@ -110,6 +119,7 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
 
   const formatTimestamp = (ts: number) => {
     if (ts === 0) return "未开始";
+
     return DateTime.fromSeconds(ts).toFormat("yyyy-MM-dd HH:mm:ss");
   };
 
@@ -136,6 +146,7 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
       const time = DateTime.local().toFormat("HH:mm:ss");
       const newLog: LogEntry = { time, message };
       const prevLogs = prev[configId] || [];
+
       return {
         ...prev,
         [configId]: [...prevLogs.slice(-49), newLog], // 保留最多50条
@@ -145,10 +156,11 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
 
   const handleGetAllRuningTask = async () => {
     const res = await fetch(`${BACKEND_URL}/allDm/getAllRuningTask`, {
-      method: "POST"
+      method: "POST",
     });
 
     const cidToTaskIdMap = (await res.json()).data;
+
     for (const [configId, _taskId] of Object.entries(cidToTaskIdMap)) {
       if (typeof _taskId !== "string") {
         // 什么垃圾后端?
@@ -156,20 +168,20 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
         continue; // 跳过无效数据
       }
       const taskId: string = _taskId;
-      const cid: number = +(configId.split('-').pop() || 0);
+      const cid: number = +(configId.split("-").pop() || 0);
       const ws = new WebSocket(
-        `${BACKEND_URL.replace(/^http/, "ws")}/allDm/ws/${taskId}`
+        `${BACKEND_URL.replace(/^http/, "ws")}/allDm/ws/${taskId}`,
       );
 
       ws.onmessage = (event: MessageEvent<string>) => {
         try {
           const msg: ServerMessage = JSON.parse(event.data);
-          
+
           if (msg.type === "log") {
             appendLog(configId, msg.data);
           } else if (msg.type === "taskConfig") {
             console.log("设置了啊");
-            
+
             replaceTaskByConfigId(msg.data);
           } else {
             console.warn(`未知消息类型: ${msg}`);
@@ -195,7 +207,7 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
         }
       };
 
-      toast.info(`连接到: configId = ${configId}`)
+      toast.info(`连接到: configId = ${configId}`);
 
       wsMap.current[cid] = ws;
       taskIdCidMap.set(configId, taskId);
@@ -205,6 +217,7 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
   const handleStart = async (task: TaskConfig, mainTitle: string) => {
     if (taskIdCidMap.has(task.configId)) {
       toast.error("任务已经开始了, 不能再次启动任务; 可以刷新网页再尝试");
+
       return;
     }
     // 新建任务
@@ -212,24 +225,29 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       // StartTaskVo
-      body: JSON.stringify({ configId: task.configId, cid: task.cid, path: `${mainTitle}/${task.title}` }),
+      body: JSON.stringify({
+        configId: task.configId,
+        cid: task.cid,
+        path: `${mainTitle}/${task.title}`,
+      }),
     });
 
     // 记录 taskId
     const taskId = (await res.json()).data.taskId;
+
     taskIdCidMap.set(task.configId, taskId);
 
     // 连接到实时日志
     const ws = new WebSocket(
-      `${BACKEND_URL.replace(/^http/, "ws")}/allDm/ws/${taskId}`
+      `${BACKEND_URL.replace(/^http/, "ws")}/allDm/ws/${taskId}`,
     );
 
-    toast.info(`连接到: cid = ${task.cid}`)
+    toast.info(`连接到: cid = ${task.cid}`);
 
     ws.onmessage = (event: MessageEvent<string>) => {
       try {
         const msg: ServerMessage = JSON.parse(event.data);
-        
+
         if (msg.type === "log") {
           appendLog(task.configId, msg.data);
         } else if (msg.type === "taskConfig") {
@@ -237,7 +255,6 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
         } else {
           console.warn(`未知消息类型: ${msg}`);
         }
-
       } catch (e) {
         console.error("消息格式错误", e, event.data);
       }
@@ -263,12 +280,16 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
 
   const handleStop = async (task: TaskConfig) => {
     if (taskIdCidMap.get(task.configId) === undefined) {
-      toast.error("任务并没有开始, 请刷新网页再尝试")
+      toast.error("任务并没有开始, 请刷新网页再尝试");
+
       return;
     }
-    await fetch(`${BACKEND_URL}/allDm/stopTask/${taskIdCidMap.get(task.configId)}`, {
-      method: "POST",
-    });
+    await fetch(
+      `${BACKEND_URL}/allDm/stopTask/${taskIdCidMap.get(task.configId)}`,
+      {
+        method: "POST",
+      },
+    );
 
     taskIdCidMap.delete(task.configId);
 
@@ -287,8 +308,11 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
     setLoadingConfig(true);
     setIsConfigModalOpen(true);
     try {
-      const res = await fetch(`${BACKEND_URL}/allDm/getTaskConfig/${configId}?cid=${cid}`);
+      const res = await fetch(
+        `${BACKEND_URL}/allDm/getTaskConfig/${configId}?cid=${cid}`,
+      );
       const json = await res.json();
+
       setTaskConfigData(json.data);
     } finally {
       setLoadingConfig(false);
@@ -331,56 +355,78 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
                       <strong>爬取:</strong> {task.title} ({task.cid})
                     </div>
                     <div>
-                      <strong>数据:</strong> {task.totalDanmaku} 条 | 神弹幕: {task.advancedDanmaku}
+                      <strong>数据:</strong> {task.totalDanmaku} 条 | 神弹幕:{" "}
+                      {task.advancedDanmaku}
                     </div>
                     <div>
-                      <strong>进度:</strong> {formatTimestamp(task.currentTime)} / {formatTimestamp(task.range[1])}
+                      <strong>进度:</strong> {formatTimestamp(task.currentTime)}{" "}
+                      / {formatTimestamp(task.range[1])}
                     </div>
                     <div>
-                      <strong>上次执行:</strong> {formatTimestamp(task.lastFetchTime)}
+                      <strong>上次执行:</strong>{" "}
+                      {formatTimestamp(task.lastFetchTime)}
                     </div>
-                    <div className="mt-2 border rounded p-2 bg-black text-green-400 text-xs font-mono max-h-40 overflow-y-auto cursor-pointer"
-                      onClick={() => toggleLogOpen(task.configId)}>
-                      {logOpenMap[task.configId]
-                        ? (
-                          <ScrollShadow hideScrollBar className="max-h-40">
-                            {logMap[task.configId]?.map((log, idx) => (
-                              <div key={idx}>
-                                [{log.time}] {log.message}
-                              </div>
-                            )) || <div>暂无日志</div>}
-                          </ScrollShadow>
-                        ) : (
-                          <div>
-                            {logMap[task.configId]?.length
-                              ? `[${logMap[task.configId][logMap[task.configId].length - 1].time}] ${logMap[task.configId][logMap[task.configId].length - 1].message}`
-                              : "暂无日志 (点击展开)"}
-                          </div>
-                        )}
+                    <div
+                      className="mt-2 border rounded p-2 bg-black text-green-400 text-xs font-mono max-h-40 overflow-y-auto cursor-pointer"
+                      onClick={() => toggleLogOpen(task.configId)}
+                    >
+                      {logOpenMap[task.configId] ? (
+                        <ScrollShadow hideScrollBar className="max-h-40">
+                          {logMap[task.configId]?.map((log, idx) => (
+                            <div key={idx}>
+                              [{log.time}] {log.message}
+                            </div>
+                          )) || <div>暂无日志</div>}
+                        </ScrollShadow>
+                      ) : (
+                        <div>
+                          {logMap[task.configId]?.length
+                            ? `[${logMap[task.configId][logMap[task.configId].length - 1].time}] ${logMap[task.configId][logMap[task.configId].length - 1].message}`
+                            : "暂无日志 (点击展开)"}
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   <div className="flex flex-col items-end space-y-1 w-1/4">
                     <div className={`font-bold ${getStatusColor(task.status)}`}>
-                      {task.status} {" "}
+                      {task.status}{" "}
                       {manageMode && (
                         <input
-                          type="checkbox"
                           checked={checkedTaskSet.has(task.configId)}
+                          type="checkbox"
                           onChange={() => toggleTaskSelect(task.configId)}
                         />
                       )}
                     </div>
-                    <Button size="sm" color="primary" onPress={() => handleStart(task, t.mainTitle)}>
+                    <Button
+                      color="primary"
+                      size="sm"
+                      onPress={() => handleStart(task, t.mainTitle)}
+                    >
                       运行
                     </Button>
-                    <Button size="sm" color="warning" onPress={() => handleStop(task)}>
+                    <Button
+                      color="warning"
+                      size="sm"
+                      onPress={() => handleStop(task)}
+                    >
                       暂停
                     </Button>
-                    <Button size="sm" color="secondary" onPress={() => handleOpenConfig(task.configId, task.cid)}>
+                    <Button
+                      color="secondary"
+                      size="sm"
+                      onPress={() => handleOpenConfig(task.configId, task.cid)}
+                    >
                       配置
                     </Button>
-                    <Button size="sm" color="default" onPress={() => handleOpenExport(task.configId, task.cid, task.title)}>
+                    <Button
+                      color="default"
+                      size="sm"
+                      onPress={() =>
+                        handleOpenExport(task.configId, task.cid, task.title)
+                      }
+                    >
                       导出弹幕
                     </Button>
                   </div>
@@ -394,13 +440,13 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
       {manageMode ? (
         <div className="fixed bottom-20 right-8 z-50 flex space-x-4">
           <Button
-            color="danger"
             className="shadow-xl rounded-full px-6 py-4 text-base"
-            startContent={<Trash2 size={20} />}
-            size="sm"
+            color="danger"
             disabled={checkedTaskSet.size === 0}
+            size="sm"
+            startContent={<Trash2 size={20} />}
             onPress={async () => {
-              if (!confirm(`确定删除 ${checkedTaskSet.size} 个任务吗？`)) 
+              if (!confirm(`确定删除 ${checkedTaskSet.size} 个任务吗？`))
                 return;
 
               await fetch(`${BACKEND_URL}/allDm/deleteTasks`, {
@@ -418,8 +464,8 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
           </Button>
 
           <Button
-            color="default"
             className="shadow-xl rounded-full px-6 py-4 text-base"
+            color="default"
             size="sm"
             onPress={() => {
               setCheckedTaskSet(new Set());
@@ -431,29 +477,29 @@ export function TaskListPanel ({ refreshKey }: { refreshKey: number }) {
         </div>
       ) : (
         <Button
-          color="secondary"
           className="fixed bottom-20 right-8 z-50 shadow-xl rounded-full px-6 py-4 text-base"
+          color="secondary"
           size="sm"
-          onPress={() => setManageMode(true)}
           startContent={<Hammer size={20} />}
+          onPress={() => setManageMode(true)}
         >
           管理任务
         </Button>
       )}
 
       <ExportXmlModal
+        cid={exportCid}
+        configId={exportConfigId}
+        defaultFileName={exportFileName}
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
-        configId={exportConfigId}
-        cid={exportCid}
-        defaultFileName={exportFileName}
       />
 
       <TaskConfigModal
         key={taskConfigData?.cid || 0}
+        configData={taskConfigData}
         isOpen={isConfigModalOpen}
         loading={loadingConfig}
-        configData={taskConfigData}
         onClose={() => {
           setIsConfigModalOpen(false);
           setTaskConfigData(null);

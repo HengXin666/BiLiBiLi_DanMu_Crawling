@@ -93,17 +93,24 @@
             allDmReqManager._clients[taskId].remove(ws)
  */
 
-
 "use client";
 
 import { useState } from "react";
-import { title } from "@/components/primitives";
-import { TaskAddPanel } from "./TaskAddPanel";
-import { TaskListPanel } from "./TaskListPanel";
-import { Button, Modal, ModalBody, ModalContent, ModalHeader } from "@nextui-org/react";
+import {
+  Button,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalHeader,
+} from "@heroui/react";
 import { Plus } from "lucide-react";
 
-export default function TaskManagerPage () {
+import { TaskAddPanel } from "./TaskAddPanel";
+import { TaskListPanel } from "./TaskListPanel";
+
+import { title } from "@/components/primitives";
+
+export default function TaskManagerPage() {
   const [refreshKey, setRefreshKey] = useState<number>(0);
   const [isAddTaskOpen, setIsAddTaskOpen] = useState<boolean>(false);
 
@@ -120,28 +127,28 @@ export default function TaskManagerPage () {
 
       {/* 右下角悬浮按钮 */}
       <Button
+        className="fixed bottom-8 right-8 z-50 shadow-xl rounded-full px-6 py-4 text-base"
         color="primary"
         isIconOnly={false}
-        className="fixed bottom-8 right-8 z-50 shadow-xl rounded-full px-6 py-4 text-base"
-        onPress={() => setIsAddTaskOpen(true)}
         startContent={<Plus size={20} />}
+        onPress={() => setIsAddTaskOpen(true)}
       >
         新建任务
       </Button>
 
       <Modal
-        isOpen={isAddTaskOpen}
-        onOpenChange={setIsAddTaskOpen}
-        isDismissable={false}
-        size="xl"
         className="max-w-4xl w-full"
+        isDismissable={false}
+        isOpen={isAddTaskOpen}
+        size="xl"
+        onOpenChange={setIsAddTaskOpen}
       >
         <ModalContent className="flex flex-col h-[80vh]">
           <ModalHeader>新建任务</ModalHeader>
 
           <ModalBody className="flex-1 overflow-hidden">
             <div className="h-full overflow-y-auto px-1">
-              <TaskAddPanel onSuccess={handleAddTaskSuccess} isInModal={true} />
+              <TaskAddPanel isInModal={true} onSuccess={handleAddTaskSuccess} />
             </div>
           </ModalBody>
         </ModalContent>
@@ -149,4 +156,3 @@ export default function TaskManagerPage () {
     </div>
   );
 }
-
