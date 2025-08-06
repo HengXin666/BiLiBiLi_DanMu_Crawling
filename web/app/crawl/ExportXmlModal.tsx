@@ -12,6 +12,7 @@ import {
   ModalContent,
 } from "@heroui/react";
 import { useRouter } from "next/navigation";
+import { fileSave } from "browser-fs-access";
 
 import { BACKEND_URL } from "@/config/env";
 
@@ -71,17 +72,17 @@ export function ExportXmlModal({
       }
 
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
 
       if (dmHandel) {
+        const url = URL.createObjectURL(blob);
+
         router.push(`/dmHandle?url=${url}&fn=${fileName}`);
       } else {
-        const link = document.createElement("a");
-
-        link.href = url;
-        link.download = filename; // 使用解码后的文件名
-        link.click();
-        URL.revokeObjectURL(url);
+        fileSave(blob, {
+          fileName: filename,
+          extensions: [".xml"],
+          startIn: "downloads", // 文件选择器默认打开的目录
+        });
       }
     } finally {
       setLoading(false);
