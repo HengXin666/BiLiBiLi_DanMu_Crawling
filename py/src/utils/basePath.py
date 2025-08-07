@@ -9,7 +9,7 @@ class BasePath:
         """
         if getattr(sys, 'frozen', False):
             # PyInstaller 模式
-            return Path(sys._MEIPASS) # type: ignore
+            return Path(sys.executable).parent # type: ignore
         else:
             # 开发环境：假设 py/ 是源码根目录，返回项目根路径
             return Path(__file__).resolve().parent.parent.parent

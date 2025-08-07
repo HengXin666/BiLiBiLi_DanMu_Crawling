@@ -7,6 +7,11 @@ from src.controller.allDmReqController import allDmReqController
 from src.controller.mainConfigController import mainConfigController
 from src.controller.videoInfoController import videoInfoController
 
+import os, sys
+# 兼容 PyInstaller
+if getattr(sys, 'frozen', False):
+    os.chdir(sys._MEIPASS) # type: ignore
+
 app = FastAPI()
 
 app.include_router(allDmReqController)
@@ -21,4 +26,4 @@ app.add_middleware(
 )
 
 if __name__ == '__main__':
-    uvicorn.run("main:app", host="0.0.0.0", port=28299, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=28299)
