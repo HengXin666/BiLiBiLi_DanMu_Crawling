@@ -75,7 +75,22 @@ export default function DmHandlePage() {
           mimeTypes: ["text/x-ssa"],
           extensions: [".ass"],
         },
-      ]);
+      ]).catch((e) => {
+        const err = String(e);
+
+        addToast({
+          title: "弹幕导入失败",
+          description: err.includes("aborted") ? "用户手动取消文件选择" : err,
+          color: "danger",
+        });
+      });
+
+      if (!file) {
+        // 这里就不该报错
+        // addToast({});
+
+        return;
+      }
       const getFileExtension = (filename: string) => {
         const parts = filename.split(".");
 
@@ -144,6 +159,14 @@ export default function DmHandlePage() {
       fileName: fileName + "." + ext,
       extensions: ["." + ext],
       startIn: "downloads",
+    }).catch((e) => {
+      const err = String(e);
+
+      addToast({
+        title: "弹幕导出失败",
+        description: err.includes("aborted") ? "用户手动取消导出" : err,
+        color: "danger",
+      });
     });
     addToast({
       title: "弹幕已导出",
@@ -347,7 +370,7 @@ export default function DmHandlePage() {
                           title: fileName,
                           raw: { compressType: "gzip", baseType: "base18384" },
                         }),
-                        "ass",
+                        "ass"
                       );
                     }}
                   >
@@ -377,7 +400,7 @@ export default function DmHandlePage() {
                       onPress={() => {
                         startDownload(
                           JSON.stringify(dmPool.toDplayer()),
-                          "json",
+                          "json"
                         );
                       }}
                     >
@@ -388,7 +411,7 @@ export default function DmHandlePage() {
                       onPress={() => {
                         startDownload(
                           JSON.stringify(dmPool.toArtplayer()),
-                          "json",
+                          "json"
                         );
                       }}
                     >
@@ -399,7 +422,7 @@ export default function DmHandlePage() {
                       onPress={() => {
                         startDownload(
                           JSON.stringify(dmPool.toDDplay()),
-                          "json",
+                          "json"
                         );
                       }}
                     >
