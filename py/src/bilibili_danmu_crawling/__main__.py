@@ -3,9 +3,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-from src.controller.allDmReqController import allDmReqController
-from src.controller.mainConfigController import mainConfigController
-from src.controller.videoInfoController import videoInfoController
+from bilibili_danmu_crawling.src.controller.allDmReqController import allDmReqController
+from bilibili_danmu_crawling.src.controller.mainConfigController import mainConfigController
+from bilibili_danmu_crawling.src.controller.videoInfoController import videoInfoController
 
 import os, sys
 # 兼容 PyInstaller

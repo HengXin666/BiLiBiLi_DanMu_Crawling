@@ -11,3 +11,111 @@ dependencies = [
     "requests>=2.32.4",
     "uvicorn[standard]>=0.35.0",
 ]
+
+
+
+# content below this line added by briefcase convert
+# This project was generated with 0.3.24 using template: https://github.com/beeware/briefcase-template @ v0.3.24
+[tool.briefcase]
+project_name = "Bilibili Danmu Crawling"
+bundle = "com.github"
+version = "0.0.1"
+url = "https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling"
+license.file = "LICENSE"
+author = "Heng_Xin_666"
+author_email = "282000500@qq.com"
+
+[tool.briefcase.app.bilibili-danmu-crawling]
+formal_name = "Bilibili Danmu Crawling"
+description = "B站全弹幕爬虫"
+long_description = """More details about the app should go here.
+"""
+sources = [
+    "src/bilibili_danmu_crawling",
+]
+test_sources = [
+    "tests",
+]
+console_app = true
+
+requires = [
+    # Add your cross-platform app requirements here
+]
+test_requires = [
+    # Add your cross-platform test requirements here
+]
+
+[tool.briefcase.app.bilibili-danmu-crawling.macOS]
+universal_build = true
+requires = [
+    # Add your macOS-specific app requirements here
+]
+
+[tool.briefcase.app.bilibili-danmu-crawling.linux]
+requires = [
+    # Add your Linux-specific app requirements here
+]
+
+[tool.briefcase.app.bilibili-danmu-crawling.linux.system.debian]
+system_requires = [
+    # Add any system packages needed at build the app here
+]
+
+system_runtime_requires = [
+    # Add any system packages needed at runtime here
+]
+
+[tool.briefcase.app.bilibili-danmu-crawling.linux.system.rhel]
+system_requires = [
+    # Add any system packages needed at build the app here
+]
+
+system_runtime_requires = [
+    # Add any system packages needed at runtime here
+]
+
+[tool.briefcase.app.bilibili-danmu-crawling.linux.system.suse]
+system_requires = [
+    # Add any system packages needed at build the app here
+]
+
+system_runtime_requires = [
+    # Add any system packages needed at runtime here
+]
+
+[tool.briefcase.app.bilibili-danmu-crawling.linux.system.arch]
+system_requires = [
+    # Add any system packages needed at build the app here
+]
+
+system_runtime_requires = [
+    # Add any system packages needed at runtime here
+]
+
+[tool.briefcase.app.bilibili-danmu-crawling.linux.flatpak]
+flatpak_runtime = "org.freedesktop.Platform"
+flatpak_runtime_version = "24.08"
+flatpak_sdk = "org.freedesktop.Sdk"
+
+[tool.briefcase.app.bilibili-danmu-crawling.windows]
+requires = [
+    # Add your Windows-specific app requirements here
+]
+
+# Mobile deployments
+[tool.briefcase.app.bilibili-danmu-crawling.iOS]
+requires = [
+    # Add your iOS-specific app requirements here
+]
+
+[tool.briefcase.app.bilibili-danmu-crawling.android]
+requires = [
+    # Add your Android-specific app requirements here
+]
+
+# Web deployments
+[tool.briefcase.app.bilibili-danmu-crawling.web]
+requires = [
+    # Add your web-specific app requirements here
+]
+
