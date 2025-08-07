@@ -10,12 +10,12 @@ import {
   addToast,
 } from "@heroui/react";
 import { DateTime } from "luxon";
-import { toast } from "sonner";
 import { Hammer, Trash2 } from "lucide-react";
 
 import { ExportXmlModal } from "./ExportXmlModal";
 import { TaskConfigModal, TaskConfig } from "./TaskConfigModal";
 
+import { toast } from "@/config/toast";
 import { BACKEND_URL } from "@/config/env";
 
 interface AllTaskData {
@@ -227,7 +227,7 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
         }
       };
 
-      toast.info(`连接到: configId = ${configId}`);
+      toast.info("连接到", `configId = ${configId}`);
 
       wsMap.current[cid] = ws;
       taskIdCidMap.set(configId, taskId);
@@ -236,7 +236,10 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
 
   const handleStart = async (task: TaskConfig, mainTitle: string) => {
     if (taskIdCidMap.has(task.configId)) {
-      toast.error("任务已经开始了, 不能再次启动任务; 可以刷新网页再尝试");
+      toast.error(
+        "任务启动失败",
+        "任务已经开始了, 不能再次启动任务; 可以刷新网页再尝试",
+      );
 
       return;
     }
@@ -262,7 +265,7 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
       `${BACKEND_URL.replace(/^http/, "ws")}/allDm/ws/${taskId}`,
     );
 
-    toast.info(`连接到: cid = ${task.cid}`);
+    toast.info("连接到", `cid = ${task.cid}`);
 
     ws.onmessage = (event: MessageEvent<string>) => {
       try {
@@ -314,7 +317,7 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
 
   const handleStop = async (task: TaskConfig) => {
     if (taskIdCidMap.get(task.configId) === undefined) {
-      toast.error("任务并没有开始, 请刷新网页再尝试");
+      toast.error("暂停任务失败", "任务并没有开始, 请刷新网页再尝试");
 
       return;
     }

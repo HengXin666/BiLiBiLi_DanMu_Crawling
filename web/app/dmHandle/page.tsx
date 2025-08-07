@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  addToast,
   Button,
   ButtonGroup,
   Divider,
@@ -16,6 +15,7 @@ import { DM_format, UniPool } from "@dan-uni/dan-any";
 import { fileOpen, fileSave } from "browser-fs-access";
 
 import { title, subtitle } from "@/components/primitives";
+import { toast } from "@/config/toast";
 
 const sanitizePath = (input: string): boolean => {
   return /[ \/\\\*\?\<\>\|":]/g.test(input);
@@ -34,14 +34,8 @@ export default function DmHandlePage() {
 
   const importDm = async () => {
     const fail = (description?: string) =>
-      addToast({ title: "弹幕导入失败", description, color: "danger" });
-    const success = () =>
-      addToast({
-        title: "弹幕导入成功",
-        timeout: 1000,
-        shouldShowTimeoutProgress: true,
-        color: "success",
-      });
+      toast.error("弹幕导入失败", description);
+    const success = () => toast.success("弹幕导入成功");
 
     if (url)
       await fetch(url)
@@ -80,11 +74,10 @@ export default function DmHandlePage() {
       ]).catch((e) => {
         const err = String(e);
 
-        addToast({
-          title: "弹幕导入失败",
-          description: err.includes("aborted") ? "用户手动取消文件选择" : err,
-          color: "danger",
-        });
+        toast.error(
+          "弹幕导入失败",
+          err.includes("aborted") ? "用户手动取消文件选择" : err,
+        );
       });
 
       if (!file) {
@@ -164,18 +157,12 @@ export default function DmHandlePage() {
     }).catch((e) => {
       const err = String(e);
 
-      addToast({
-        title: "弹幕导出失败",
-        description: err.includes("aborted") ? "用户手动取消导出" : err,
-        color: "danger",
-      });
+      toast.error(
+        "弹幕导出失败",
+        err.includes("aborted") ? "用户手动取消导出" : err,
+      );
     });
-    addToast({
-      title: "弹幕已导出",
-      timeout: 3000,
-      shouldShowTimeoutProgress: true,
-      color: "success",
-    });
+    toast.success("弹幕已导出");
   };
 
   // useEffect(() => {}, []);
@@ -322,12 +309,7 @@ export default function DmHandlePage() {
                       color="primary"
                       onPress={() => {
                         setDmPool(dmPool.merge(mergeLifetime));
-                        addToast({
-                          title: "去重成功",
-                          timeout: 1000,
-                          shouldShowTimeoutProgress: true,
-                          color: "success",
-                        });
+                        toast.success("去重成功");
                       }}
                     >
                       去重(基础)
@@ -383,7 +365,7 @@ export default function DmHandlePage() {
                           title: fileName,
                           raw: { compressType: "gzip", baseType: "base18384" },
                         }),
-                        "ass"
+                        "ass",
                       );
                     }}
                   >
@@ -413,7 +395,7 @@ export default function DmHandlePage() {
                       onPress={() => {
                         startDownload(
                           JSON.stringify(dmPool.toDplayer()),
-                          "json"
+                          "json",
                         );
                       }}
                     >
@@ -424,7 +406,7 @@ export default function DmHandlePage() {
                       onPress={() => {
                         startDownload(
                           JSON.stringify(dmPool.toArtplayer()),
-                          "json"
+                          "json",
                         );
                       }}
                     >
@@ -435,7 +417,7 @@ export default function DmHandlePage() {
                       onPress={() => {
                         startDownload(
                           JSON.stringify(dmPool.toDDplay()),
-                          "json"
+                          "json",
                         );
                       }}
                     >
@@ -450,13 +432,7 @@ export default function DmHandlePage() {
               color="danger"
               onPress={() => {
                 const success = () =>
-                  addToast({
-                    title: "导出弹幕完成",
-                    description: "已释放缓存",
-                    color: "success",
-                    timeout: 1000,
-                    shouldShowTimeoutProgress: true,
-                  });
+                  toast.success("导出弹幕完成", "已释放缓存");
 
                 if (url) {
                   URL.revokeObjectURL(url);

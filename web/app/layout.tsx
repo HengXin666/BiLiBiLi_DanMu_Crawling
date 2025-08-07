@@ -2,7 +2,6 @@ import "@/styles/globals.css";
 import { Metadata, Viewport } from "next";
 import { Link } from "@heroui/link";
 import clsx from "clsx";
-import { Toaster } from "sonner";
 
 import { Providers } from "./providers";
 
@@ -42,7 +41,6 @@ export default function RootLayout({
           fontSans.variable,
         )}
       >
-        <Toaster richColors position="top-center" />
         <Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
           <div className="relative flex flex-col h-screen">
             <Navbar />
