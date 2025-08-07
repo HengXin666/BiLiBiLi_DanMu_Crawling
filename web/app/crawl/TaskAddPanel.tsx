@@ -211,7 +211,7 @@ export function TaskAddPanel({
               granularity="day"
               label="开始时间"
               value={startTime}
-              onChange={setStartTime}
+              onChange={(e) => setStartTime(e || today(getLocalTimeZone()))}
             />
             <DatePicker
               isRequired
@@ -219,7 +219,7 @@ export function TaskAddPanel({
               granularity="day"
               label="结束时间"
               value={endTime}
-              onChange={setEndTime}
+              onChange={(e) => setEndTime(e || today(getLocalTimeZone()))}
             />
           </div>
         )}

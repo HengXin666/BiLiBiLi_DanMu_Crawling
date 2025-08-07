@@ -10,7 +10,7 @@
     "lint": "eslint --fix"
   },
   "dependencies": {
-    "@dan-uni/dan-any": "^0.9.1",
+    "@dan-uni/dan-any": "^0.9.2",
     "@heroui/button": "^2.2.24",
     "@heroui/link": "^2.2.21",
     "@heroui/navbar": "^2.2.22",

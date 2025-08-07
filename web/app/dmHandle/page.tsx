@@ -140,7 +140,7 @@ export default function DmHandlePage() {
   };
   const startDownload = (dm: string | Uint8Array, ext: string) => {
     setFileExt(ext);
-    fileSave(new Blob([dm]), {
+    fileSave(new Blob([dm as string | ArrayBuffer]), {
       fileName: fileName + "." + ext,
       extensions: ["." + ext],
       startIn: "downloads",
