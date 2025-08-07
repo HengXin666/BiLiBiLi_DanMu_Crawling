@@ -6,7 +6,9 @@ import {
   ButtonGroup,
   Divider,
   Input,
+  Kbd,
   NumberInput,
+  Tooltip,
 } from "@heroui/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -212,9 +214,20 @@ export default function DmHandlePage() {
           <Button color="primary" onPress={importDm}>
             读取弹幕
           </Button>
-          <p className="text-sm text-gray-400">
-            可选择弹幕类型以筛选文件，也可选择全部文件挑选文件。
-          </p>
+          <div className="text-sm text-gray-400">
+            点击<Kbd>读取弹幕</Kbd>
+            后，在打开的窗口可选择弹幕类型以筛选文件，也可选择全部文件挑选文件。
+            <br />
+            只有
+            <Tooltip color="foreground" content="完全支持" offset={-3}>
+              <Kbd>@dan-uni/dan-any</Kbd>
+            </Tooltip>
+            及
+            <Tooltip color="foreground" content="兼容性支持" offset={-3}>
+              <Kbd>biliy</Kbd>
+            </Tooltip>
+            导出的ASS可以被还原。
+          </div>
         </>
       )}
       {dmPool.dans.length > 0 && (
