@@ -9,9 +9,9 @@ import {
   Card,
   DatePicker,
 } from "@heroui/react";
-import { toast } from "sonner";
 import { DateValue, getLocalTimeZone, today } from "@internationalized/date";
 
+import { toast } from "@/config/toast";
 import { BACKEND_URL } from "@/config/env";
 
 interface VideoPart {
@@ -70,10 +70,10 @@ export function TaskAddPanel({
         setParts(data.data.cidList);
         setSelectedParts(data.data.cidList.map((v: VideoPart) => v.cid));
       } else {
-        toast.error(`获取分P失败: ${data.msg}`);
+        toast.error("获取分P失败", "data.msg");
       }
     } catch (e) {
-      toast.error(`接口请求异常: ${String(e)}`);
+      toast.error("接口请求异常", String(e));
     }
   };
 
@@ -152,7 +152,7 @@ export function TaskAddPanel({
       toast.success("任务初始化成功");
       onSuccess();
     } catch (e) {
-      toast.error(`任务初始化失败: ${String(e)}`);
+      toast.error("任务初始化失败", String(e));
     }
   };
 
@@ -211,7 +211,7 @@ export function TaskAddPanel({
               granularity="day"
               label="开始时间"
               value={startTime}
-              onChange={setStartTime}
+              onChange={(e) => setStartTime(e || today(getLocalTimeZone()))}
             />
             <DatePicker
               isRequired
@@ -219,7 +219,7 @@ export function TaskAddPanel({
               granularity="day"
               label="结束时间"
               value={endTime}
-              onChange={setEndTime}
+              onChange={(e) => setEndTime(e || today(getLocalTimeZone()))}
             />
           </div>
         )}

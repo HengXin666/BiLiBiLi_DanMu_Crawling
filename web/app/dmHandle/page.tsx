@@ -1,12 +1,13 @@
 "use client";
 
 import {
-  addToast,
   Button,
   ButtonGroup,
   Divider,
   Input,
+  Kbd,
   NumberInput,
+  Tooltip,
 } from "@heroui/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -14,6 +15,7 @@ import { DM_format, UniPool } from "@dan-uni/dan-any";
 import { fileOpen, fileSave } from "browser-fs-access";
 
 import { title, subtitle } from "@/components/primitives";
+import { toast } from "@/config/toast";
 
 const sanitizePath = (input: string): boolean => {
   return /[ \/\\\*\?\<\>\|":]/g.test(input);
@@ -32,14 +34,8 @@ export default function DmHandlePage() {
 
   const importDm = async () => {
     const fail = (description?: string) =>
-      addToast({ title: "弹幕导入失败", description, color: "danger" });
-    const success = () =>
-      addToast({
-        title: "弹幕导入成功",
-        timeout: 1000,
-        shouldShowTimeoutProgress: true,
-        color: "success",
-      });
+      toast.error("弹幕导入失败", description);
+    const success = () => toast.success("弹幕导入成功");
 
     if (url)
       await fetch(url)
@@ -75,7 +71,21 @@ export default function DmHandlePage() {
           mimeTypes: ["text/x-ssa"],
           extensions: [".ass"],
         },
-      ]);
+      ]).catch((e) => {
+        const err = String(e);
+
+        toast.error(
+          "弹幕导入失败",
+          err.includes("aborted") ? "用户手动取消文件选择" : err,
+        );
+      });
+
+      if (!file) {
+        // 这里就不该报错
+        // addToast({});
+
+        return;
+      }
       const getFileExtension = (filename: string) => {
         const parts = filename.split(".");
 
@@ -117,7 +127,6 @@ export default function DmHandlePage() {
         }
       } else if (ext === "json") {
         try {
-          // console.log(await file.text());
           const imp = UniPool.import(await file.text());
 
           setFileType(imp.fmt);
@@ -141,17 +150,19 @@ export default function DmHandlePage() {
   };
   const startDownload = (dm: string | Uint8Array, ext: string) => {
     setFileExt(ext);
-    fileSave(new Blob([dm]), {
+    fileSave(new Blob([dm as string | ArrayBuffer]), {
       fileName: fileName + "." + ext,
       extensions: ["." + ext],
       startIn: "downloads",
+    }).catch((e) => {
+      const err = String(e);
+
+      toast.error(
+        "弹幕导出失败",
+        err.includes("aborted") ? "用户手动取消导出" : err,
+      );
     });
-    addToast({
-      title: "弹幕已导出",
-      timeout: 3000,
-      shouldShowTimeoutProgress: true,
-      color: "success",
-    });
+    toast.success("弹幕已导出");
   };
 
   // useEffect(() => {}, []);
@@ -190,9 +201,20 @@ export default function DmHandlePage() {
           <Button color="primary" onPress={importDm}>
             读取弹幕
           </Button>
-          <p className="text-sm text-gray-400">
-            可选择弹幕类型以筛选文件，也可选择全部文件挑选文件。
-          </p>
+          <div className="text-sm text-gray-400">
+            点击<Kbd>读取弹幕</Kbd>
+            后，在打开的窗口可选择弹幕类型以筛选文件，也可选择全部文件挑选文件。
+            <br />
+            只有
+            <Tooltip color="foreground" content="完全支持" offset={-3}>
+              <Kbd>@dan-uni/dan-any</Kbd>
+            </Tooltip>
+            及
+            <Tooltip color="foreground" content="兼容性支持" offset={-3}>
+              <Kbd>biliy</Kbd>
+            </Tooltip>
+            导出的ASS可以被还原。
+          </div>
         </>
       )}
       {dmPool.dans.length > 0 && (
@@ -287,12 +309,7 @@ export default function DmHandlePage() {
                       color="primary"
                       onPress={() => {
                         setDmPool(dmPool.merge(mergeLifetime));
-                        addToast({
-                          title: "去重成功",
-                          timeout: 1000,
-                          shouldShowTimeoutProgress: true,
-                          color: "success",
-                        });
+                        toast.success("去重成功");
                       }}
                     >
                       去重(基础)
@@ -348,7 +365,7 @@ export default function DmHandlePage() {
                           title: fileName,
                           raw: { compressType: "gzip", baseType: "base18384" },
                         }),
-                        "ass"
+                        "ass",
                       );
                     }}
                   >
@@ -378,7 +395,7 @@ export default function DmHandlePage() {
                       onPress={() => {
                         startDownload(
                           JSON.stringify(dmPool.toDplayer()),
-                          "json"
+                          "json",
                         );
                       }}
                     >
@@ -389,7 +406,7 @@ export default function DmHandlePage() {
                       onPress={() => {
                         startDownload(
                           JSON.stringify(dmPool.toArtplayer()),
-                          "json"
+                          "json",
                         );
                       }}
                     >
@@ -400,7 +417,7 @@ export default function DmHandlePage() {
                       onPress={() => {
                         startDownload(
                           JSON.stringify(dmPool.toDDplay()),
-                          "json"
+                          "json",
                         );
                       }}
                     >
@@ -415,13 +432,7 @@ export default function DmHandlePage() {
               color="danger"
               onPress={() => {
                 const success = () =>
-                  addToast({
-                    title: "导出弹幕完成",
-                    description: "已释放缓存",
-                    color: "success",
-                    timeout: 1000,
-                    shouldShowTimeoutProgress: true,
-                  });
+                  toast.success("导出弹幕完成", "已释放缓存");
 
                 if (url) {
                   URL.revokeObjectURL(url);

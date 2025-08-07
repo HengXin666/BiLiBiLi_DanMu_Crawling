@@ -7,14 +7,15 @@ import {
   Card,
   Button,
   ScrollShadow,
+  addToast,
 } from "@heroui/react";
 import { DateTime } from "luxon";
-import { toast } from "sonner";
 import { Hammer, Trash2 } from "lucide-react";
 
 import { ExportXmlModal } from "./ExportXmlModal";
 import { TaskConfigModal, TaskConfig } from "./TaskConfigModal";
 
+import { toast } from "@/config/toast";
 import { BACKEND_URL } from "@/config/env";
 
 interface AllTaskData {
@@ -164,7 +165,11 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
     for (const [configId, _taskId] of Object.entries(cidToTaskIdMap)) {
       if (typeof _taskId !== "string") {
         // 什么垃圾后端?
-        console.warn(`taskId 类型错误: ${configId} ->`, _taskId);
+        addToast({
+          title: String(_taskId),
+          description: `taskId 类型错误: ${configId} ->`,
+          color: "warning",
+        });
         continue; // 跳过无效数据
       }
       const taskId: string = _taskId;
@@ -180,23 +185,38 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
           if (msg.type === "log") {
             appendLog(configId, msg.data);
           } else if (msg.type === "taskConfig") {
-            console.log("设置了啊");
+            // console.log("设置了啊");
 
             replaceTaskByConfigId(msg.data);
           } else {
-            console.warn(`未知消息类型: ${msg}`);
+            addToast({
+              title: "未知消息类型",
+              description: String(msg),
+              color: "warning",
+            });
           }
         } catch (e) {
-          console.error("消息格式错误", e, event.data);
+          addToast({
+            title: "消息格式错误",
+            description: String(e) + "/n" + event.data,
+            color: "warning",
+          });
         }
       };
 
       ws.onerror = (e) => {
-        console.error(`WebSocket error for cid ${configId}`, e);
+        addToast({
+          title: `WebSocket错误(cid: ${configId})`,
+          description: String(e),
+          color: "danger",
+        });
       };
 
       ws.onclose = () => {
-        console.warn(`WebSocket closed for cid ${configId}`);
+        addToast({
+          title: `WebSocket已关闭(cid: ${configId})`,
+          color: "warning",
+        });
 
         if (wsMap.current[cid]) {
           wsMap.current[cid].close();
@@ -207,7 +227,7 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
         }
       };
 
-      toast.info(`连接到: configId = ${configId}`);
+      toast.info("连接到", `configId = ${configId}`);
 
       wsMap.current[cid] = ws;
       taskIdCidMap.set(configId, taskId);
@@ -216,7 +236,10 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
 
   const handleStart = async (task: TaskConfig, mainTitle: string) => {
     if (taskIdCidMap.has(task.configId)) {
-      toast.error("任务已经开始了, 不能再次启动任务; 可以刷新网页再尝试");
+      toast.error(
+        "任务启动失败",
+        "任务已经开始了, 不能再次启动任务; 可以刷新网页再尝试",
+      );
 
       return;
     }
@@ -242,7 +265,7 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
       `${BACKEND_URL.replace(/^http/, "ws")}/allDm/ws/${taskId}`,
     );
 
-    toast.info(`连接到: cid = ${task.cid}`);
+    toast.info("连接到", `cid = ${task.cid}`);
 
     ws.onmessage = (event: MessageEvent<string>) => {
       try {
@@ -253,19 +276,33 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
         } else if (msg.type === "taskConfig") {
           replaceTaskByConfigId(msg.data);
         } else {
-          console.warn(`未知消息类型: ${msg}`);
+          addToast({
+            title: "未知消息类型",
+            description: msg,
+          });
         }
       } catch (e) {
-        console.error("消息格式错误", e, event.data);
+        addToast({
+          title: "消息格式错误",
+          description: String(e) + ";" + event.data,
+          color: "danger",
+        });
       }
     };
 
     ws.onerror = (e) => {
-      console.error(`WebSocket error for cid ${task.cid}`, e);
+      addToast({
+        title: `WebSocket错误(cid: ${task.cid})`,
+        description: String(e),
+        color: "danger",
+      });
     };
 
     ws.onclose = () => {
-      console.warn(`WebSocket closed for cid ${task.cid}`);
+      addToast({
+        title: `WebSocket已关闭(cid: ${task.cid})`,
+        color: "warning",
+      });
       if (wsMap.current[task.cid]) {
         wsMap.current[task.cid].close();
         delete wsMap.current[task.cid];
@@ -280,7 +317,7 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
 
   const handleStop = async (task: TaskConfig) => {
     if (taskIdCidMap.get(task.configId) === undefined) {
-      toast.error("任务并没有开始, 请刷新网页再尝试");
+      toast.error("暂停任务失败", "任务并没有开始, 请刷新网页再尝试");
 
       return;
     }
@@ -368,7 +405,10 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
                     </div>
                     <div
                       className="mt-2 border rounded p-2 bg-black text-green-400 text-xs font-mono max-h-40 overflow-y-auto cursor-pointer"
+                      role="button"
+                      tabIndex={0}
                       onClick={() => toggleLogOpen(task.configId)}
+                      onKeyDown={() => toggleLogOpen(task.configId)}
                     >
                       {logOpenMap[task.configId] ? (
                         <ScrollShadow hideScrollBar className="max-h-40">

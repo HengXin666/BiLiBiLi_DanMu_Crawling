@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { Input, Button, Card, CardBody, CardHeader } from "@heroui/react";
 import { Slider } from "@heroui/react";
-import { toast } from "sonner";
 import { Trash, Plus } from "lucide-react";
 
+import { toast } from "@/config/toast";
 import { title } from "@/components/primitives";
 import { BACKEND_URL } from "@/config/env";
 
@@ -96,7 +96,7 @@ export default function SettingPage() {
     if (result.code === 0) {
       toast.success("保存成功");
     } else {
-      toast.error(`保存失败: ${result.msg}`);
+      toast.error("保存失败", result.msg);
     }
   };
 
@@ -112,10 +112,10 @@ export default function SettingPage() {
         setCookies(cfg.cookies);
         setTimerRange(cfg.timer);
       } else {
-        toast.error(`获取配置失败: ${data.msg}`);
+        toast.error("获取配置失败", data.msg);
       }
     } catch (e) {
-      toast.error(`获取配置异常: ${String(e)}`);
+      toast.error("获取配置异常", String(e));
     }
   };
 
@@ -136,10 +136,10 @@ export default function SettingPage() {
         // 重新拉取最新配置，刷新界面
         await fetchConfig();
       } else {
-        toast.error(`读取失败: ${result.msg}`);
+        toast.error("读取失败", result.msg);
       }
     } catch (e) {
-      toast.error(`读取异常: ${String(e)}`);
+      toast.error("读取异常", String(e));
     }
   };
 
