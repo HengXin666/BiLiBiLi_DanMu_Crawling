@@ -33,5 +33,12 @@ uv sync
 4. 启动
 
 ```sh
-uv run main.py
+uvx briefcase dev
+```
+
+5. 构建
+
+```sh
+uvx briefcase create
+uvx briefcase build
 ```
