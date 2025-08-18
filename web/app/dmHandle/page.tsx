@@ -12,7 +12,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { DM_format, UniPool } from "@dan-uni/dan-any";
-import { fileOpen, fileSave } from "browser-fs-access";
+import { fileOpen, fileSave, FileWithHandle } from "browser-fs-access";
 
 import ImportInfo from "./importInfo";
 import LibInfo from "./libInfo";
@@ -35,6 +35,7 @@ export default function DmHandlePage() {
   const [dmPool, setDmPool] = useState<UniPool>(emptyUniPool);
   const [fileType, setFileType] = useState<DM_format>();
   const [mergeLifetime, setMergeLifetime] = useState<number>(10);
+  const [FSA, setFSA] = useState<FileSystemFileHandle>();
 
   const fnValid = useMemo(() => {
     if (fileName === "") return false;
@@ -60,35 +61,37 @@ export default function DmHandlePage() {
           router.push("/dmHandle");
         });
     else {
-      const file = await fileOpen([
-        {
-          description: "bili xml 弹幕",
-          mimeTypes: ["application/xml"],
-          extensions: [".xml"],
-        },
-        {
-          description: "ProtoBuf 弹幕",
-          mimeTypes: ["application/octet-stream"],
-          extensions: [".bin", ".so"],
-        },
-        {
-          description: "JSON 弹幕",
-          mimeTypes: ["application/json"],
-          extensions: [".json"],
-        },
-        {
-          description: "ASS 弹幕",
-          mimeTypes: ["text/x-ssa"],
-          extensions: [".ass"],
-        },
-      ]).catch((e) => {
-        const err = String(e);
+      const file = FSA
+        ? ((await FSA.getFile()) as FileWithHandle)
+        : await fileOpen([
+            {
+              description: "bili xml 弹幕",
+              mimeTypes: ["application/xml"],
+              extensions: [".xml"],
+            },
+            {
+              description: "ProtoBuf 弹幕",
+              mimeTypes: ["application/octet-stream"],
+              extensions: [".bin", ".so"],
+            },
+            {
+              description: "JSON 弹幕",
+              mimeTypes: ["application/json"],
+              extensions: [".json"],
+            },
+            {
+              description: "ASS 弹幕",
+              mimeTypes: ["text/x-ssa"],
+              extensions: [".ass"],
+            },
+          ]).catch((e) => {
+            const err = String(e);
 
-        toast.error(
-          "弹幕导入失败",
-          err.includes("aborted") ? "用户手动取消文件选择" : err,
-        );
-      });
+            toast.error(
+              "弹幕导入失败",
+              err.includes("aborted") ? "用户手动取消文件选择" : err,
+            );
+          });
 
       if (!file) {
         // 这里就不该报错
@@ -101,6 +104,8 @@ export default function DmHandlePage() {
 
         return parts.length > 1 ? parts.pop() : "";
       };
+
+      if (!FSA && file.handle) setFSA(file.handle);
 
       const fn = file.name;
       let ext = getFileExtension(fn),
@@ -373,6 +378,7 @@ export default function DmHandlePage() {
                 } else {
                   setFileType(undefined);
                   setDmPool(emptyUniPool);
+                  setFSA(undefined);
                   success();
                 }
               }}
