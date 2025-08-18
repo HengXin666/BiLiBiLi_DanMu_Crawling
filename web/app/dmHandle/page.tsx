@@ -10,27 +10,37 @@ import {
   Tooltip,
 } from "@heroui/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { DM_format, UniPool } from "@dan-uni/dan-any";
 import { fileOpen, fileSave } from "browser-fs-access";
 
-import { title, subtitle } from "@/components/primitives";
-import { toast } from "@/config/toast";
+import ImportInfo from "./importInfo";
+import LibInfo from "./libInfo";
+import Analytics from "./analytics";
 
-const sanitizePath = (input: string): boolean => {
-  return /[ \/\\\*\?\<\>\|":]/g.test(input);
-};
+import { toast } from "@/config/toast";
+import { title, subtitle } from "@/components/primitives";
+
+const sanitizePath = (input: string): boolean =>
+  /[ \/\\\*\?\<\>\|":]/.test(input);
+const emptyUniPool = UniPool.create();
 
 export default function DmHandlePage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [fileExt, setFileExt] = useState<string>("xml");
   const url = searchParams.get("url") || "",
     filename = searchParams.get("fn") || "";
+  const [fileExt, setFileExt] = useState<string>("xml");
   const [fileName, setFileName] = useState<string>(filename);
-  const [dmPool, setDmPool] = useState<UniPool>(UniPool.create());
+  const [dmPool, setDmPool] = useState<UniPool>(emptyUniPool);
   const [fileType, setFileType] = useState<DM_format>();
   const [mergeLifetime, setMergeLifetime] = useState<number>(10);
+
+  const fnValid = useMemo(() => {
+    if (fileName === "") return false;
+
+    return sanitizePath(fileName);
+  }, [fileName]);
 
   const importDm = async () => {
     const fail = (description?: string) =>
@@ -171,29 +181,7 @@ export default function DmHandlePage() {
     <div className="flex flex-col gap-4">
       <h1 className={title()}>弹幕处理</h1>
 
-      <>
-        <h2 className={subtitle()}>导入信息</h2>
-        <div className="flex flex-col gap-2">
-          {url && (
-            <Input
-              isReadOnly
-              label="弹幕来源(Blob)"
-              labelPlacement="outside"
-              type="url"
-              value={url}
-              variant="bordered"
-            />
-          )}
-          <Input
-            isReadOnly
-            label="弹幕来源文件类型"
-            labelPlacement="outside"
-            type="text"
-            value={fileType || "未知"}
-            variant="bordered"
-          />
-        </div>
-      </>
+      <ImportInfo fileType={fileType} url={url} />
 
       <Divider />
       {(dmPool.dans.length > 0 && !dmPool.info.fromConverted) || (
@@ -219,65 +207,9 @@ export default function DmHandlePage() {
       )}
       {dmPool.dans.length > 0 && (
         <>
-          <>
-            <h2 className={subtitle()}>弹幕库信息</h2>
-            <div className="flex flex-col gap-2">
-              <Input
-                isReadOnly
-                label="弹幕数量"
-                type="number"
-                value={dmPool.dans.length.toString()}
-                variant="bordered"
-              />
-              <Input
-                isReadOnly
-                description="def_<platform>+<cid>@<platform>"
-                label="弹幕资源ID(SOID)"
-                type="email"
-                value={dmPool.shared.SOID}
-                variant="bordered"
-              />
-              <Input
-                isReadOnly
-                label="弹幕来源"
-                type="text"
-                value={dmPool.shared.platform}
-                variant="bordered"
-              />
-              <Input
-                isReadOnly
-                description="经过多次格式转换可能会带来意料之外的错误结果"
-                isInvalid={dmPool.info.fromConverted}
-                label="是否经过多次格式转换"
-                type="text"
-                value={
-                  dmPool.info.fromConverted
-                    ? "是(极有可能转换出错误的结果)"
-                    : "否(正常使用)"
-                }
-                variant="bordered"
-              />
-            </div>
-          </>
+          <LibInfo dmPool={dmPool} />
           <Divider />
-          <>
-            <h2 className={subtitle()}>统计信息</h2>
-            <div className="flex flex-col gap-2">
-              <Input
-                label="出现最多的内容"
-                type="text"
-                value={dmPool.most.content}
-                variant="bordered"
-              />
-              <Input
-                description="<midHash>@bili，对midHash逆推可得用户的mid"
-                label="发言最多的用户ID"
-                type="email"
-                value={dmPool.most.senderID}
-                variant="bordered"
-              />
-            </div>
-          </>
+          <Analytics dmPool={dmPool} />
           <Divider />
           {dmPool.info.fromConverted || (
             <>
@@ -326,7 +258,6 @@ export default function DmHandlePage() {
               <>
                 <Input
                   isRequired
-                  defaultValue={fileName}
                   endContent={
                     <div className="pointer-events-none flex items-center">
                       <span className="text-default-400 text-small">
@@ -334,12 +265,13 @@ export default function DmHandlePage() {
                       </span>
                     </div>
                   }
-                  isInvalid={sanitizePath(fileName)}
+                  isInvalid={fnValid}
                   label="文件名称"
                   labelPlacement="outside"
                   type="text"
+                  value={fileName}
                   variant="bordered"
-                  onValueChange={setFileName}
+                  onChange={(e) => setFileName(e.target.value)}
                 />
                 <div className="flex gap-2">
                   <Button
@@ -440,7 +372,7 @@ export default function DmHandlePage() {
                   router.push("/crawl");
                 } else {
                   setFileType(undefined);
-                  setDmPool(UniPool.create());
+                  setDmPool(emptyUniPool);
                   success();
                 }
               }}
