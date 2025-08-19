@@ -1,19 +1,24 @@
 import type { UniPool } from "@dan-uni/dan-any";
 
-import { Input } from "@heroui/react";
+import { Input, NumberInput } from "@heroui/react";
+import { useMemo } from "react";
 
 import { subtitle } from "@/components/primitives";
 
 export default function LibInfo({ dmPool }: { dmPool: UniPool }) {
+  const shared = useMemo(() => {
+    return dmPool.shared;
+  }, [dmPool]);
+
   return (
     <>
       <h2 className={subtitle()}>弹幕库信息</h2>
       <div className="flex flex-col gap-2">
-        <Input
+        <NumberInput
           isReadOnly
           label="弹幕数量"
           type="number"
-          value={dmPool.dans.length.toString()}
+          value={dmPool.dans.length}
           variant="bordered"
         />
         <Input
@@ -21,14 +26,14 @@ export default function LibInfo({ dmPool }: { dmPool: UniPool }) {
           description="def_<platform>+<cid>@<platform>"
           label="弹幕资源ID(SOID)"
           type="email"
-          value={dmPool.shared.SOID}
+          value={shared.SOID}
           variant="bordered"
         />
         <Input
           isReadOnly
           label="弹幕来源"
           type="text"
-          value={dmPool.shared.platform}
+          value={shared.platform}
           variant="bordered"
         />
         <Input

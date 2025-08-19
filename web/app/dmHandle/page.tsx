@@ -3,16 +3,28 @@
 import {
   Button,
   ButtonGroup,
+  Code,
   Divider,
   Input,
   Kbd,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
   NumberInput,
   Tooltip,
+  useDisclosure,
 } from "@heroui/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { DM_format, UniPool } from "@dan-uni/dan-any";
-import { fileOpen, fileSave, FileWithHandle } from "browser-fs-access";
+import {
+  fileOpen,
+  fileSave,
+  FileWithHandle,
+  supported as FSAsupported,
+} from "browser-fs-access";
 
 import ImportInfo from "./importInfo";
 import LibInfo from "./libInfo";
@@ -36,6 +48,8 @@ export default function DmHandlePage() {
   const [fileType, setFileType] = useState<DM_format>();
   const [mergeLifetime, setMergeLifetime] = useState<number>(10);
   const [FSA, setFSA] = useState<FileSystemFileHandle>();
+  const FSAWarning = useDisclosure();
+  const [FSAWarningClose, setFSAWarningCLose] = useState<boolean>(FSAsupported);
 
   const fnValid = useMemo(() => {
     if (fileName === "") return false;
@@ -161,15 +175,20 @@ export default function DmHandlePage() {
           fail(`解析二进制文件失败[${e}]`);
         }
       }
+
+      success();
     }
   };
-  const startDownload = (dm: string | Uint8Array, ext: string) => {
-    setFileExt(ext);
-    fileSave(new Blob([dm as string | ArrayBuffer]), {
-      fileName: fileName + "." + ext,
-      extensions: ["." + ext],
-      startIn: "downloads",
-    }).catch((e) => {
+  const fileSaver = (dm: string | Uint8Array, ext: string) => {
+    fileSave(
+      new Blob([dm as string | ArrayBuffer]),
+      {
+        fileName: fileName + "." + ext,
+        extensions: ["." + ext],
+        startIn: "downloads",
+      },
+      null,
+    ).catch((e) => {
       const err = String(e);
 
       toast.error(
@@ -178,6 +197,12 @@ export default function DmHandlePage() {
       );
     });
     toast.success("弹幕已导出");
+  };
+  const startDownload = (dm: string | Uint8Array, ext: string) => {
+    setFileExt(ext);
+
+    if (FSAWarningClose) fileSaver(dm, ext);
+    else FSAWarning.onOpen();
   };
 
   // useEffect(() => {}, []);
@@ -276,7 +301,7 @@ export default function DmHandlePage() {
                   type="text"
                   value={fileName}
                   variant="bordered"
-                  onChange={(e) => setFileName(e.target.value)}
+                  onValueChange={setFileName}
                 />
                 <div className="flex gap-2">
                   <Button
@@ -362,6 +387,45 @@ export default function DmHandlePage() {
                     </Button>
                   </ButtonGroup>
                 </div>
+                <Modal
+                  isOpen={FSAWarning.isOpen}
+                  onOpenChange={FSAWarning.onOpenChange}
+                >
+                  <ModalContent>
+                    {(onClose) => (
+                      <>
+                        <ModalHeader>⚠️ 兼容性警告</ModalHeader>
+                        <ModalBody>
+                          <p>
+                            当前环境不支持
+                            <Code color="primary">FileSystemAccessAPI</Code>
+                            ，点击保存将可能直接存储至<Code>下载</Code>或
+                            <Code>Downloads</Code>文件夹。
+                          </p>
+                          <p>确认后再次点击导出格式对应按钮即可保存。</p>
+                        </ModalBody>
+                        <ModalFooter>
+                          <Button
+                            color="danger"
+                            variant="flat"
+                            onPress={onClose}
+                          >
+                            取消
+                          </Button>
+                          <Button
+                            color="primary"
+                            onPress={() => {
+                              setFSAWarningCLose(true);
+                              onClose();
+                            }}
+                          >
+                            我已知悉
+                          </Button>
+                        </ModalFooter>
+                      </>
+                    )}
+                  </ModalContent>
+                </Modal>
               </>
             )}
 
