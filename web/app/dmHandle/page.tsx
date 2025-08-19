@@ -252,7 +252,7 @@ export default function DmHandlePage() {
                     </Button>
                   </div>
                   <Divider />
-                  <div className="flex gap-2">
+                  <div className="flex flex-col gap-2 lg:flex-row">
                     <NumberInput
                       description="合并一定时间段内的重复弹幕，防止同屏出现过多[0表示不查重]"
                       endContent={
@@ -284,171 +284,176 @@ export default function DmHandlePage() {
           )}
           <>
             <h2 className={subtitle()}>导出设置</h2>
-            {dmPool.info.fromConverted || (
-              <>
-                <Input
-                  isRequired
-                  endContent={
-                    <div className="pointer-events-none flex items-center">
-                      <span className="text-default-400 text-small">
-                        .{fileExt}
-                      </span>
-                    </div>
+            <>
+              {dmPool.info.fromConverted || (
+                <>
+                  <Input
+                    isRequired
+                    endContent={
+                      <div className="pointer-events-none flex items-center">
+                        <span className="text-default-400 text-small">
+                          .{fileExt}
+                        </span>
+                      </div>
+                    }
+                    isInvalid={fnValid}
+                    label="文件名称"
+                    labelPlacement="outside"
+                    type="text"
+                    value={fileName}
+                    variant="bordered"
+                    onValueChange={setFileName}
+                  />
+                  <div className="flex flex-col gap-2 lg:flex-row">
+                    <Button
+                      color="primary"
+                      onPress={() => {
+                        startDownload(dmPool.toBiliXML(), "xml");
+                      }}
+                    >
+                      Bili(XML)
+                    </Button>
+                    <Button
+                      color="primary"
+                      onPress={() => {
+                        const canvas = document.createElement("canvas");
+
+                        canvas.width = 50;
+                        canvas.height = 50;
+                        const ctx = canvas.getContext("2d");
+
+                        startDownload(
+                          dmPool.toASS(ctx, {
+                            filename: `${fileName}.xml`,
+                            title: fileName,
+                            raw: {
+                              compressType: "gzip",
+                              baseType: "base18384",
+                            },
+                          }),
+                          "ass",
+                        );
+                      }}
+                    >
+                      ASS
+                    </Button>
+                    <ButtonGroup>
+                      <Button
+                        color="primary"
+                        onPress={() => {
+                          startDownload(JSON.stringify(dmPool.dans), "json");
+                        }}
+                      >
+                        DanUni(JSON)
+                      </Button>
+                      <Button
+                        color="secondary"
+                        onPress={() => {
+                          startDownload(dmPool.toPb(), "pb.bin");
+                        }}
+                      >
+                        DanUni(ProtoBuf)
+                      </Button>
+                    </ButtonGroup>
+                    <ButtonGroup>
+                      <Button
+                        color="primary"
+                        onPress={() => {
+                          startDownload(
+                            JSON.stringify(dmPool.toDplayer()),
+                            "json",
+                          );
+                        }}
+                      >
+                        Dplayer
+                      </Button>
+                      <Button
+                        color="secondary"
+                        onPress={() => {
+                          startDownload(
+                            JSON.stringify(dmPool.toArtplayer()),
+                            "json",
+                          );
+                        }}
+                      >
+                        Artplayer
+                      </Button>
+                      <Button
+                        color="default"
+                        onPress={() => {
+                          startDownload(
+                            JSON.stringify(dmPool.toDDplay()),
+                            "json",
+                          );
+                        }}
+                      >
+                        弹弹Play
+                      </Button>
+                    </ButtonGroup>
+                  </div>
+                  <Modal
+                    isOpen={FSAWarning.isOpen}
+                    onOpenChange={FSAWarning.onOpenChange}
+                  >
+                    <ModalContent>
+                      {(onClose) => (
+                        <>
+                          <ModalHeader>⚠️ 兼容性警告</ModalHeader>
+                          <ModalBody>
+                            <p>
+                              当前环境不支持
+                              <Code color="primary">FileSystemAccessAPI</Code>
+                              ，点击保存将可能直接存储至<Code>下载</Code>或
+                              <Code>Downloads</Code>文件夹。
+                            </p>
+                            <p>确认后再次点击导出格式对应按钮即可保存。</p>
+                          </ModalBody>
+                          <ModalFooter>
+                            <Button
+                              color="danger"
+                              variant="flat"
+                              onPress={onClose}
+                            >
+                              取消
+                            </Button>
+                            <Button
+                              color="primary"
+                              onPress={() => {
+                                setFSAWarningCLose(true);
+                                onClose();
+                              }}
+                            >
+                              我已知悉
+                            </Button>
+                          </ModalFooter>
+                        </>
+                      )}
+                    </ModalContent>
+                  </Modal>
+                </>
+              )}
+
+              <Button
+                color="danger"
+                onPress={() => {
+                  const success = () =>
+                    toast.success("导出弹幕完成", "已释放缓存");
+
+                  if (url) {
+                    URL.revokeObjectURL(url);
+                    success();
+                    router.push("/crawl");
+                  } else {
+                    setFileType(undefined);
+                    setDmPool(emptyUniPool);
+                    setFSA(undefined);
+                    success();
                   }
-                  isInvalid={fnValid}
-                  label="文件名称"
-                  labelPlacement="outside"
-                  type="text"
-                  value={fileName}
-                  variant="bordered"
-                  onValueChange={setFileName}
-                />
-                <div className="flex gap-2">
-                  <Button
-                    color="primary"
-                    onPress={() => {
-                      startDownload(dmPool.toBiliXML(), "xml");
-                    }}
-                  >
-                    Bili(XML)
-                  </Button>
-                  <Button
-                    color="primary"
-                    onPress={() => {
-                      const canvas = document.createElement("canvas");
-
-                      canvas.width = 50;
-                      canvas.height = 50;
-                      const ctx = canvas.getContext("2d");
-
-                      startDownload(
-                        dmPool.toASS(ctx, {
-                          filename: `${fileName}.xml`,
-                          title: fileName,
-                          raw: { compressType: "gzip", baseType: "base18384" },
-                        }),
-                        "ass",
-                      );
-                    }}
-                  >
-                    ASS
-                  </Button>
-                  <ButtonGroup>
-                    <Button
-                      color="primary"
-                      onPress={() => {
-                        startDownload(JSON.stringify(dmPool.dans), "json");
-                      }}
-                    >
-                      DanUni(JSON)
-                    </Button>
-                    <Button
-                      color="secondary"
-                      onPress={() => {
-                        startDownload(dmPool.toPb(), "pb.bin");
-                      }}
-                    >
-                      DanUni(ProtoBuf)
-                    </Button>
-                  </ButtonGroup>
-                  <ButtonGroup>
-                    <Button
-                      color="primary"
-                      onPress={() => {
-                        startDownload(
-                          JSON.stringify(dmPool.toDplayer()),
-                          "json",
-                        );
-                      }}
-                    >
-                      Dplayer
-                    </Button>
-                    <Button
-                      color="secondary"
-                      onPress={() => {
-                        startDownload(
-                          JSON.stringify(dmPool.toArtplayer()),
-                          "json",
-                        );
-                      }}
-                    >
-                      Artplayer
-                    </Button>
-                    <Button
-                      color="default"
-                      onPress={() => {
-                        startDownload(
-                          JSON.stringify(dmPool.toDDplay()),
-                          "json",
-                        );
-                      }}
-                    >
-                      弹弹Play
-                    </Button>
-                  </ButtonGroup>
-                </div>
-                <Modal
-                  isOpen={FSAWarning.isOpen}
-                  onOpenChange={FSAWarning.onOpenChange}
-                >
-                  <ModalContent>
-                    {(onClose) => (
-                      <>
-                        <ModalHeader>⚠️ 兼容性警告</ModalHeader>
-                        <ModalBody>
-                          <p>
-                            当前环境不支持
-                            <Code color="primary">FileSystemAccessAPI</Code>
-                            ，点击保存将可能直接存储至<Code>下载</Code>或
-                            <Code>Downloads</Code>文件夹。
-                          </p>
-                          <p>确认后再次点击导出格式对应按钮即可保存。</p>
-                        </ModalBody>
-                        <ModalFooter>
-                          <Button
-                            color="danger"
-                            variant="flat"
-                            onPress={onClose}
-                          >
-                            取消
-                          </Button>
-                          <Button
-                            color="primary"
-                            onPress={() => {
-                              setFSAWarningCLose(true);
-                              onClose();
-                            }}
-                          >
-                            我已知悉
-                          </Button>
-                        </ModalFooter>
-                      </>
-                    )}
-                  </ModalContent>
-                </Modal>
-              </>
-            )}
-
-            <Button
-              color="danger"
-              onPress={() => {
-                const success = () =>
-                  toast.success("导出弹幕完成", "已释放缓存");
-
-                if (url) {
-                  URL.revokeObjectURL(url);
-                  success();
-                  router.push("/crawl");
-                } else {
-                  setFileType(undefined);
-                  setDmPool(emptyUniPool);
-                  setFSA(undefined);
-                  success();
-                }
-              }}
-            >
-              确认导出完成(退出)
-            </Button>
+                }}
+              >
+                确认导出完成(退出)
+              </Button>
+            </>
           </>
         </>
       )}
