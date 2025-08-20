@@ -5,6 +5,7 @@ description = "B站全弹幕爬虫"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "argparse>=1.4.0",
     "fastapi>=0.116.1",
     "orjson>=3.11.0",
     "protobuf>=6.31.1",
