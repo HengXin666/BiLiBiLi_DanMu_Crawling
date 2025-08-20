@@ -11,7 +11,6 @@ import {
 } from "@heroui/navbar";
 import { Button } from "@heroui/button";
 import { Link } from "@heroui/link";
-import NextLink from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
@@ -32,10 +31,14 @@ export const Navbar = () => {
     >
       <NavbarContent className="basis-1/5 sm:basis-full" justify="start">
         <NavbarBrand as="li" className="gap-3 max-w-fit">
-          <NextLink className="flex justify-start items-center gap-1" href="/">
+          <Link
+            className="flex justify-start items-center gap-1"
+            color="foreground"
+            href="/"
+          >
             <Logo />
             <p className="font-bold text-inherit">DanMuCrawl</p>
-          </NextLink>
+          </Link>
         </NavbarBrand>
         <ul className="hidden sm:flex gap-4 justify-start ml-2">
           {siteConfig.navItems.map((item) => (
