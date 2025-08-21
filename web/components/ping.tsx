@@ -1,11 +1,12 @@
 "use client";
 
-import { BACKEND_URL, BACKEND_URL_OK } from "@/config/env";
-import { toast } from "@/config/toast";
 import { Button, Form, Input } from "@heroui/react";
 import { useAtom } from "jotai";
 import { RESET } from "jotai/utils";
 import { useEffect } from "react";
+
+import { toast } from "@/config/toast";
+import { BACKEND_URL, BACKEND_URL_OK } from "@/config/env";
 
 export default function Ping({ renderUI = false }: { renderUI?: boolean }) {
   const [backendUrl, setBackendUrl] = useAtom(BACKEND_URL);
@@ -24,9 +25,13 @@ export default function Ping({ renderUI = false }: { renderUI?: boolean }) {
 
     fetch(`${backendUrl}/base/ping`)
       .then((res) => res.json())
-      .then((data) => {
+      .then(async (data) => {
         if (data?.data === "pong") {
-          toast.success("连接成功");
+          const ver = await fetch(`${backendUrl}/base/version`)
+            .then((res) => res.json())
+            .then((data) => data.data);
+
+          toast.success("连接成功", "当前后端版本号：" + ver);
           setBackendUrlOk(0);
         } else fail();
       })

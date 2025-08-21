@@ -44,6 +44,10 @@ class BasePath:
             return BasePath._getSysDefaultPath()
 
     @staticmethod
+    def getPyProjectPath() -> Path:
+        return Path(__file__).resolve().parent.parent.parent / "pyproject.toml"
+
+    @staticmethod
     def relativePath(relative: str | Path | None = None) -> Path:
         if relative is None:
             return BasePath._getAppRoot().resolve()

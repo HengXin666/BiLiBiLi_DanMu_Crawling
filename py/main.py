@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import argparse
 
+from src.info.version import get_version
 from src.controller.allDmReqController import allDmReqController
 from src.controller.basicInfoController import basicInfoController
 from src.controller.mainConfigController import mainConfigController
@@ -15,8 +16,11 @@ import os, sys
 if getattr(sys, "frozen", False):
     os.chdir(sys._MEIPASS)  # type: ignore
 
+__version__ = get_version()
+
 parser = argparse.ArgumentParser(description="bilibili_danmu_crawling")
 
+parser.add_argument("--version", "-v", action="version", version=__version__)
 parser.add_argument(
     "-p", "--port", type=int, default=28299, help="输入服务器将要打开的端口"
 )

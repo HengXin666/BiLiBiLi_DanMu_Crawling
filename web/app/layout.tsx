@@ -6,9 +6,9 @@ import clsx from "clsx";
 import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
 import { Navbar } from "@/components/navbar";
+import Ping from "@/components/ping";
 
 import { Providers } from "./providers";
-import Ping from "@/components/ping";
 
 export const metadata: Metadata = {
   title: {
