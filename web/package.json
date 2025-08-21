@@ -7,7 +7,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint --fix"
+    "lint": "eslint --fix",
+    "dev:tauri": "tauri dev",
+    "build:tauri": "cross-env NO_STRIP=true tauri build"
   },
   "dependencies": {
     "@dan-uni/dan-any": "^0.9.2",
@@ -51,6 +53,7 @@
     "@typescript-eslint/eslint-plugin": "^8.40.0",
     "@typescript-eslint/parser": "^8.40.0",
     "autoprefixer": "^10.4.21",
+    "cross-env": "^10.0.0",
     "eslint": "^9.33.0",
     "eslint-config-next": "^15.5.0",
     "eslint-config-prettier": "^10.1.8",
