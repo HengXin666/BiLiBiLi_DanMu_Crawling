@@ -8,6 +8,7 @@ import { button as buttonStyles } from "@heroui/theme";
 import { siteConfig } from "@/config/site";
 import { title, subtitle } from "@/components/primitives";
 import { GithubIcon } from "@/components/icons";
+import Ping from "@/components/ping";
 
 export default function Home() {
   return (
@@ -48,6 +49,10 @@ export default function Home() {
             点击 <Code color="primary">爬虫</Code> 开始进行全弹幕爬取!
           </span>
         </Snippet>
+      </div>
+
+      <div className="mt-2">
+        <Ping renderUI />
       </div>
     </section>
   );

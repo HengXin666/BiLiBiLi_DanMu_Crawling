@@ -6,6 +6,7 @@ import * as React from "react";
 import { HeroUIProvider, ToastProvider } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
+import { Provider as JotaiProvider } from "jotai";
 
 export interface ProvidersProps {
   children: React.ReactNode;
@@ -24,9 +25,11 @@ export function Providers({ children, themeProps }: ProvidersProps) {
   const router = useRouter();
 
   return (
-    <HeroUIProvider navigate={router.push}>
-      <ToastProvider />
-      <NextThemesProvider {...themeProps}>{children}</NextThemesProvider>
-    </HeroUIProvider>
+    <JotaiProvider>
+      <HeroUIProvider navigate={router.push}>
+        <ToastProvider />
+        <NextThemesProvider {...themeProps}>{children}</NextThemesProvider>
+      </HeroUIProvider>
+    </JotaiProvider>
   );
 }

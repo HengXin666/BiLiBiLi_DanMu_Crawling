@@ -10,6 +10,7 @@ import {
   DatePicker,
 } from "@heroui/react";
 import { DateValue, getLocalTimeZone, today } from "@internationalized/date";
+import { useAtomValue } from "jotai";
 
 import { toast } from "@/config/toast";
 import { BACKEND_URL } from "@/config/env";
@@ -49,6 +50,7 @@ export function TaskAddPanel({
     today(getLocalTimeZone()),
   );
   const [endTime, setEndTime] = useState<DateValue>(today(getLocalTimeZone()));
+  const backendUrl = useAtomValue(BACKEND_URL);
 
   const handleFetchParts = async (): Promise<void> => {
     if (!urlOrCid.trim()) {
@@ -58,7 +60,7 @@ export function TaskAddPanel({
     }
 
     try {
-      const res = await fetch(`${BACKEND_URL}/videoInfo/getVideoPartList`, {
+      const res = await fetch(`${backendUrl}/videoInfo/getVideoPartList`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: urlOrCid }),
@@ -141,7 +143,7 @@ export function TaskAddPanel({
             range,
           };
 
-          await fetch(`${BACKEND_URL}/allDm/initTaskConfig`, {
+          await fetch(`${backendUrl}/allDm/initTaskConfig`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(config),

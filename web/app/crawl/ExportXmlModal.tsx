@@ -13,6 +13,7 @@ import {
 } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { fileSave } from "browser-fs-access";
+import { useAtomValue } from "jotai";
 
 import { BACKEND_URL } from "@/config/env";
 
@@ -36,6 +37,7 @@ export function ExportXmlModal({
   const [includeWeight, setIncludeWeight] = useState<boolean>(false);
   const [dmHandel, setDmHandle] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
+  const backendUrl = useAtomValue(BACKEND_URL);
 
   useEffect(() => {
     // init
@@ -53,7 +55,7 @@ export function ExportXmlModal({
   const handleExport = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${BACKEND_URL}/allDm/exportXml`, {
+      const res = await fetch(`${backendUrl}/allDm/exportXml`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         // py: ExportXmlOptions

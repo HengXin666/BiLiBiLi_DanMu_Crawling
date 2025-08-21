@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Input, Button, Card, CardBody, CardHeader } from "@heroui/react";
 import { Slider } from "@heroui/react";
 import { Trash, Plus } from "lucide-react";
+import { useAtomValue } from "jotai";
 
 import { toast } from "@/config/toast";
 import { title } from "@/components/primitives";
@@ -77,6 +78,7 @@ interface MainConfig {
 export default function SettingPage() {
   const [cookies, setCookies] = useState<string[]>([]);
   const [timerRange, setTimerRange] = useState<[number, number]>([5, 10]);
+  const backendUrl = useAtomValue(BACKEND_URL);
 
   // 提交配置
   const handleSave = async () => {
@@ -85,7 +87,7 @@ export default function SettingPage() {
       timer: timerRange,
     };
 
-    const res = await fetch(`${BACKEND_URL}/mainConfig/setConfig`, {
+    const res = await fetch(`${backendUrl}/mainConfig/setConfig`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(cfg),
@@ -103,7 +105,7 @@ export default function SettingPage() {
   // 获取配置函数，封装方便复用
   const fetchConfig = async () => {
     try {
-      const res = await fetch(`${BACKEND_URL}/mainConfig/getConfig`);
+      const res = await fetch(`${backendUrl}/mainConfig/getConfig`);
       const data = await res.json();
 
       if (data.code === 0) {
@@ -125,7 +127,7 @@ export default function SettingPage() {
 
   const handleReRead = async () => {
     try {
-      const res = await fetch(`${BACKEND_URL}/mainConfig/reReadConfig`, {
+      const res = await fetch(`${backendUrl}/mainConfig/reReadConfig`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });

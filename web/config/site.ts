@@ -7,22 +7,27 @@ export const siteConfig = {
     {
       label: "主页",
       href: "/",
+      backendRequired: false,
     },
     {
       label: "爬虫",
       href: "/crawl",
+      backendRequired: true,
     },
     {
       label: "处理",
       href: "/dmHandle",
+      backendRequired: false,
     },
     {
       label: "设置",
       href: "/setting",
+      backendRequired: true,
     },
     {
       label: "关于",
       href: "/about",
+      backendRequired: false,
     },
   ],
   links: {

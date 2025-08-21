@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from ..utils.basePath import BasePath
 from pydantic import BaseModel
 
 from ..pojo.vo.ResponseModel import ResponseModel
@@ -6,8 +7,10 @@ from ..fileUtils.jsonConfig import GlobalConfig, MainConfig
 
 mainConfigController = APIRouter(prefix="/mainConfig")
 
+
 class GlobalConfigVo(BaseModel, MainConfig):
     pass
+
 
 @mainConfigController.get("/getConfig", response_model=ResponseModel[dict])
 def getConfig():
@@ -16,9 +19,8 @@ def getConfig():
     Returns:
         _type_: 全局配置
     """
-    return ResponseModel.success(
-        GlobalConfig().get()
-    )
+    return ResponseModel.success(GlobalConfig().get())
+
 
 @mainConfigController.post("/setConfig", response_class=ResponseModel[None])
 def setConfig(config: GlobalConfigVo):
@@ -34,6 +36,7 @@ def setConfig(config: GlobalConfigVo):
     GlobalConfig().save()
     return ResponseModel.success()
 
+
 @mainConfigController.post("/reReadConfig", response_model=ResponseModel[None])
 def reReadConfig():
     """从文件系统重新读取配置到内存
@@ -43,3 +46,14 @@ def reReadConfig():
     """
     GlobalConfig().reRead()
     return ResponseModel.success()
+
+
+@mainConfigController.get("/getConfigPath", response_model=ResponseModel[str])
+def getConfigPath():
+    """获取全局配置文件路径
+
+    Returns:
+        _type_: 全局配置文件路径
+    """
+    path = BasePath.relativePath()
+    return ResponseModel.success(str(path))
