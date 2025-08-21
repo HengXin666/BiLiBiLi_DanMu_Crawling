@@ -12,7 +12,9 @@ BiliBili历史全弹幕获取
 
 - 多任务管理, 可以保存各个任务的进度和爬取数据. 可选择性启动任务.
 
-- 支持 Docker-Compose / DockerFile 一键私有部署
+- 支持弹幕处理 (格式转换/合并重复弹幕/统计信息(出现最多的内容/发言最多的ID))
+
+- 支持 Docker-Compose / DockerFile 一键私有部署 (后端)
 
 > 附注:
 >
@@ -59,8 +61,60 @@ BiliBili历史全弹幕获取
 ![弹幕处理界面-格式转换](dev/img/HX_2025-08-21_22-11-02.png)
 
 ## 三、使用说明
+### 3.1 部署说明
 
+推荐使用 `docker-compose.yaml` 进行部署:
 
+> 0. 请自行安装 `docker` 以及 `docker-compose` 环境.
+
+1. 把下面内容保存为 `docker-compose.yaml` (注释说明处, 可自行修改)
+
+```yaml
+services:
+  bilibili-danmu:
+    image: alpine:3.18
+    container_name: bilibili-danmu
+    working_dir: /app
+    environment:
+      LANG: "C.UTF-8"
+      TZ: "Asia/Shanghai"
+    volumes:
+      # 挂载的文件路径 ./config 可以修改到您需要的地方. 以存储爬取的缓存、日志、结果
+      - ./config:/app/config
+    ports:
+      # 端口映射. 默认是 28299 端口; 如果需要, 可自行修改
+      - "28299:28299"
+    command: >
+      sh -c "
+      apk add --no-cache git python3 py3-pip curl;
+      pip install --upgrade pip;
+      pip install uv==0.7.0;
+      if [ ! -d /app/BiLiBiLi_DanMu_Crawling ]; then
+        git clone https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling.git /app/BiLiBiLi_DanMu_Crawling;
+      else
+        cd /app/BiLiBiLi_DanMu_Crawling && git pull;
+      fi;
+      cd /app/BiLiBiLi_DanMu_Crawling/py;
+      uv sync --frozen --no-cache;
+      uv run main.py -c /app/config
+      "
+    restart: unless-stopped
+```
+
+2. 执行命令 `docker-compose up -d`, 然后稍等片刻. 即完成后端的部署.
+
+### 3.2 前端操作
+
+1. 进入前端: https://hengxin666.github.io/BiLiBiLi_DanMu_Crawling/
+
+> [!TIP]
+> 前端是静态网页, 不保存任何数据. 需要连接后端, 才可以继续操作.
+
+2. 进入填写后端的 `ip:端口`, 然后即可操作
+
+### 3.3 获取凭证
+
+@todo
 
 ## 四、代码构建
 
