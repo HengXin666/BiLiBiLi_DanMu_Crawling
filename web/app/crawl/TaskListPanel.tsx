@@ -11,6 +11,7 @@ import {
 } from "@heroui/react";
 import { DateTime } from "luxon";
 import { Hammer, Trash2 } from "lucide-react";
+import { useAtomValue } from "jotai";
 
 import { ExportXmlModal } from "./ExportXmlModal";
 import { TaskConfigModal, TaskConfig } from "./TaskConfigModal";
@@ -59,6 +60,8 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
   const [exportConfigId, setExportConfigId] = useState<string>("");
   const [exportFileName, setExportFileName] = useState<string>("");
 
+  const backendUrl = useAtomValue(BACKEND_URL);
+
   const toggleTaskSelect = (configId: string) => {
     setCheckedTaskSet((prev) => {
       const newSet = new Set(prev);
@@ -104,7 +107,7 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
   };
 
   const fetchTasks = async () => {
-    const res = await fetch(`${BACKEND_URL}/allDm/getAllTaskData`);
+    const res = await fetch(`${backendUrl}/allDm/getAllTaskData`);
     const json = await res.json();
 
     setTaskList(json.data);
@@ -156,7 +159,7 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
   };
 
   const handleGetAllRuningTask = async () => {
-    const res = await fetch(`${BACKEND_URL}/allDm/getAllRuningTask`, {
+    const res = await fetch(`${backendUrl}/allDm/getAllRuningTask`, {
       method: "POST",
     });
 
@@ -175,7 +178,7 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
       const taskId: string = _taskId;
       const cid: number = +(configId.split("-").pop() || 0);
       const ws = new WebSocket(
-        `${BACKEND_URL.replace(/^http/, "ws")}/allDm/ws/${taskId}`,
+        `${backendUrl.replace(/^http/, "ws")}/allDm/ws/${taskId}`,
       );
 
       ws.onmessage = (event: MessageEvent<string>) => {
@@ -244,7 +247,7 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
       return;
     }
     // 新建任务
-    const res = await fetch(`${BACKEND_URL}/allDm/startTask`, {
+    const res = await fetch(`${backendUrl}/allDm/startTask`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       // StartTaskVo
@@ -262,7 +265,7 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
 
     // 连接到实时日志
     const ws = new WebSocket(
-      `${BACKEND_URL.replace(/^http/, "ws")}/allDm/ws/${taskId}`,
+      `${backendUrl.replace(/^http/, "ws")}/allDm/ws/${taskId}`,
     );
 
     toast.info("连接到", `cid = ${task.cid}`);
@@ -322,7 +325,7 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
       return;
     }
     await fetch(
-      `${BACKEND_URL}/allDm/stopTask/${taskIdCidMap.get(task.configId)}`,
+      `${backendUrl}/allDm/stopTask/${taskIdCidMap.get(task.configId)}`,
       {
         method: "POST",
       },
@@ -346,7 +349,7 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
     setIsConfigModalOpen(true);
     try {
       const res = await fetch(
-        `${BACKEND_URL}/allDm/getTaskConfig/${configId}?cid=${cid}`,
+        `${backendUrl}/allDm/getTaskConfig/${configId}?cid=${cid}`,
       );
       const json = await res.json();
 
@@ -357,7 +360,7 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
   };
 
   const handleSaveTaskConfig = async (newConfig: TaskConfig) => {
-    await fetch(`${BACKEND_URL}/allDm/setTaskConfig`, {
+    await fetch(`${backendUrl}/allDm/setTaskConfig`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newConfig),
@@ -489,7 +492,7 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
               if (!confirm(`确定删除 ${checkedTaskSet.size} 个任务吗？`))
                 return;
 
-              await fetch(`${BACKEND_URL}/allDm/deleteTasks`, {
+              await fetch(`${backendUrl}/allDm/deleteTasks`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ configIds: Array.from(checkedTaskSet) }),

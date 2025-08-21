@@ -5,6 +5,7 @@ import uvicorn
 import argparse
 
 from src.controller.allDmReqController import allDmReqController
+from src.controller.basicInfoController import basicInfoController
 from src.controller.mainConfigController import mainConfigController
 from src.controller.videoInfoController import videoInfoController
 
@@ -34,6 +35,7 @@ os.environ["BILIBILI_DANMU_CRAWLING_DEV"] = str(args.dev)
 app = FastAPI()
 
 app.include_router(allDmReqController)
+app.include_router(basicInfoController)
 app.include_router(mainConfigController)
 app.include_router(videoInfoController)
 

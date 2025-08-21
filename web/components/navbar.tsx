@@ -13,14 +13,18 @@ import { Button } from "@heroui/button";
 import { Link } from "@heroui/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useAtomValue } from "jotai";
 
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { GithubIcon, HeartFilledIcon, Logo } from "@/components/icons";
+import { BACKEND_URL_OK } from "@/config/env";
+import { ServerOff } from "lucide-react";
 
 export const Navbar = () => {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const backendUrlOk = useAtomValue(BACKEND_URL_OK);
 
   return (
     <HeroUINavbar
@@ -41,16 +45,22 @@ export const Navbar = () => {
           </Link>
         </NavbarBrand>
         <ul className="hidden sm:flex gap-4 justify-start ml-2">
-          {siteConfig.navItems.map((item) => (
-            <NavbarItem key={item.href}>
-              <Link
-                color={item.href === pathname ? "secondary" : "foreground"}
-                href={item.href}
-              >
-                {item.label}
-              </Link>
-            </NavbarItem>
-          ))}
+          {siteConfig.navItems.map((item) => {
+            const linkBad = !!(item.backendRequired && backendUrlOk);
+
+            return (
+              <NavbarItem key={item.href}>
+                <Link
+                  color={item.href === pathname ? "secondary" : "foreground"}
+                  href={item.href}
+                  isDisabled={linkBad}
+                >
+                  {linkBad && <ServerOff size={15} />}
+                  {item.label}
+                </Link>
+              </NavbarItem>
+            );
+          })}
         </ul>
       </NavbarContent>
 
@@ -87,18 +97,24 @@ export const Navbar = () => {
       </NavbarContent>
 
       <NavbarMenu>
-        {siteConfig.navItems.map((item) => (
-          <NavbarMenuItem key={item.href}>
-            <Link
-              className="w-full"
-              color={item.href === pathname ? "secondary" : "foreground"}
-              href={item.href}
-              onPressEnd={() => setIsMenuOpen(false)}
-            >
-              {item.label}
-            </Link>
-          </NavbarMenuItem>
-        ))}
+        {siteConfig.navItems.map((item) => {
+          const linkBad = !!(item.backendRequired && backendUrlOk);
+
+          return (
+            <NavbarMenuItem key={item.href}>
+              <Link
+                className="w-full"
+                color={item.href === pathname ? "secondary" : "foreground"}
+                href={item.href}
+                isDisabled={linkBad}
+                onPressEnd={() => setIsMenuOpen(false)}
+              >
+                {linkBad && <ServerOff size={15} />}
+                {item.label}
+              </Link>
+            </NavbarMenuItem>
+          );
+        })}
       </NavbarMenu>
     </HeroUINavbar>
   );
