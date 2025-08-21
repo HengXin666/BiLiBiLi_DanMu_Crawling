@@ -1,9 +1,9 @@
-name: 部署爬虫前端页面
+name: Deploy Static Web
 
 on:
   push:
     branches:
-      - main   # 触发部署的分支
+      - main
   workflow_dispatch:
 
 jobs:
@@ -13,12 +13,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+          cache-dependency-path: web/pnpm-lock.yaml
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
+        with:
+          version: 9
 
       - name: Install dependencies
         working-directory: web
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Build project
         working-directory: web
