@@ -407,7 +407,7 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
                       {formatTimestamp(task.lastFetchTime)}
                     </div>
                     <div
-                      className="mt-2 border rounded p-2 bg-black text-green-400 text-xs font-mono max-h-40 overflow-y-auto cursor-pointer"
+                      className="mt-2 border rounded p-2 in-dark:bg-black in-dark:text-green-400 text-gray-500 text-xs font-mono max-h-40 overflow-y-auto cursor-pointer"
                       role="button"
                       tabIndex={0}
                       onClick={() => toggleLogOpen(task.configId)}
