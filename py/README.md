@@ -33,5 +33,11 @@ uv sync
 4. 启动
 
 ```sh
+# 生产环境(配置保存于系统配置目录)
 uv run main.py
+
+# 开发环境(配置保存于项目目录)
+uv run main.py -d
+
+# Note：可使用 -p 参数指定端口
 ```
