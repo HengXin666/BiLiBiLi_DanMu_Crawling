@@ -9,29 +9,24 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 9
-
-      - name: Setup Node.js
+      - name: Install Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
-          cache-dependency-path: web/pnpm-lock.yaml
 
-      - name: Install dependencies
-        working-directory: web
-        run: pnpm install --frozen-lockfile
+      - name: Install pnpm
+        run: npm install -g pnpm
 
-      - name: Build project
-        working-directory: web
-        run: pnpm run build
+      - name: Build
+        run: |
+          cd web
+          pnpm install --frozen-lockfile
+          pnpm run build
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
