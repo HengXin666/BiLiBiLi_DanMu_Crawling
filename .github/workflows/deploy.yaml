@@ -1,0 +1,31 @@
+name: 部署爬虫前端页面
+
+on:
+  push:
+    branches:
+      - main   # 触发部署的分支
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+
+      - name: Install dependencies
+        working-directory: web
+        run: pnpm install
+
+      - name: Build project
+        working-directory: web
+        run: pnpm run build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: web/dist
