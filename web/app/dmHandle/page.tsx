@@ -26,12 +26,12 @@ import {
   supported as FSAsupported,
 } from "browser-fs-access";
 
+import { toast } from "@/config/toast";
+import { title, subtitle } from "@/components/primitives";
+
 import ImportInfo from "./importInfo";
 import LibInfo from "./libInfo";
 import Analytics from "./analytics";
-
-import { toast } from "@/config/toast";
-import { title, subtitle } from "@/components/primitives";
 
 const sanitizePath = (input: string): boolean =>
   /[ \/\\\*\?\<\>\|":]/.test(input);

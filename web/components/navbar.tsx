@@ -14,12 +14,12 @@ import { Link } from "@heroui/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useAtomValue } from "jotai";
+import { ServerOff } from "lucide-react";
 
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { GithubIcon, HeartFilledIcon, Logo } from "@/components/icons";
 import { BACKEND_URL_OK } from "@/config/env";
-import { ServerOff } from "lucide-react";
 
 export const Navbar = () => {
   const pathname = usePathname();

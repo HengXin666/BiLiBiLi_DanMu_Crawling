@@ -13,18 +13,18 @@ import { DateTime } from "luxon";
 import { Hammer, Trash2 } from "lucide-react";
 import { useAtomValue } from "jotai";
 
-import { ExportXmlModal } from "./ExportXmlModal";
-import { TaskConfigModal, TaskConfig } from "./TaskConfigModal";
-
 import { toast } from "@/config/toast";
 import { BACKEND_URL } from "@/config/env";
+
+import { ExportXmlModal } from "./ExportXmlModal";
+import { TaskConfigModal, TaskConfig } from "./TaskConfigModal";
 
 interface AllTaskData {
   mainTitle: string;
   tasks: TaskConfig[];
 }
 
-let taskIdCidMap: Map<string, string> = new Map<string, string>();
+const taskIdCidMap: Map<string, string> = new Map<string, string>();
 
 interface LogEntry {
   time: string;

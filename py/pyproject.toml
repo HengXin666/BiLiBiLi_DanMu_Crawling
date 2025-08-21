@@ -1,6 +1,6 @@
 [project]
 name = "bilibili-danmu-crawling"
-version = "2.0.0-beta18"
+version = "2.0.0-beta20"
 description = "B站全弹幕爬虫"
 readme = "README.md"
 requires-python = ">=3.13"

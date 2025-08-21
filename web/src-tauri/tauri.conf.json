@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "BiLiBiLi_DanMu_Crawling",
-  "version": "0.1.0",
+  "version": "2.0.20",
   "identifier": "bili.dan.crawling",
   "build": {
     "frontendDist": "../out",

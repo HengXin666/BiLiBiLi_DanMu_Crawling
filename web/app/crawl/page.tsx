@@ -105,10 +105,10 @@ import {
 } from "@heroui/react";
 import { Plus } from "lucide-react";
 
+import { title } from "@/components/primitives";
+
 import { TaskAddPanel } from "./TaskAddPanel";
 import { TaskListPanel } from "./TaskListPanel";
-
-import { title } from "@/components/primitives";
 
 export default function TaskManagerPage() {
   const [refreshKey, setRefreshKey] = useState<number>(0);
