@@ -9,7 +9,7 @@ ENV LANG="C.UTF-8" \
 WORKDIR /app
 
 ADD py .
-RUN uv sync --locked
+RUN uv sync --frozen --no-cache
 
 ENV PATH="/app/.venv/bin:$PATH"
 

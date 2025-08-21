@@ -3,7 +3,7 @@ import { atomWithStorage } from "jotai/utils";
 
 export const BACKEND_URL = atomWithStorage(
   "BACKEND_URL",
-  "http://localhost:28299",
+  "http://127.0.0.1:28299",
 );
 
 /**
