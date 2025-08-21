@@ -11,6 +11,7 @@ import {
 
 import { GithubIcon } from "@/components/icons";
 import { siteConfig } from "@/config/site";
+import pkg from "@/package.json";
 
 export default function AboutPage() {
   return (
@@ -45,8 +46,7 @@ export default function AboutPage() {
           <CardBody>
             <ul className="text-base text-muted-foreground space-y-2">
               <li>
-                版本:{" "}
-                <span className="font-medium">v2.0.0 Beta (2025-07-20)</span>
+                版本: <span className="font-medium">v{pkg.version}</span>
               </li>
               <li>
                 许可证: <span className="font-medium">MIT</span>
