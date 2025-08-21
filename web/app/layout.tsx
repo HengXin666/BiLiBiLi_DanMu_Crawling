@@ -8,6 +8,7 @@ import { fontSans } from "@/config/fonts";
 import { Navbar } from "@/components/navbar";
 
 import { Providers } from "./providers";
+import Ping from "@/components/ping";
 
 export const metadata: Metadata = {
   title: {
@@ -43,6 +44,7 @@ export default function RootLayout({
       >
         <Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
           <div className="relative flex flex-col h-screen">
+            <Ping />
             <Navbar />
             <main className="w-full flex-grow pt-16 px-6">{children}</main>
             <footer className="w-full flex items-center justify-center py-3">
