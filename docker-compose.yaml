@@ -1,0 +1,27 @@
+services:
+  bilibili-danmu:
+    image: alpine:3.18  # 使用官方 Alpine 最新稳定版本
+    container_name: bilibili-danmu
+    working_dir: /app
+    environment:
+      LANG: "C.UTF-8"
+      TZ: "Asia/Shanghai"
+    volumes:
+      - ./config:/app/config
+    ports:
+      - "28299:28299"
+    command: >
+      sh -c "
+      apk add --no-cache git python3 py3-pip curl;
+      pip install --upgrade pip;
+      pip install uv==0.7.0;
+      if [ ! -d /app/BiLiBiLi_DanMu_Crawling ]; then
+        git clone https://github.com/HengXin666/BiLiBiLi_DanMu_Crawling.git /app/BiLiBiLi_DanMu_Crawling;
+      else
+        cd /app/BiLiBiLi_DanMu_Crawling && git pull;
+      fi;
+      cd /app/BiLiBiLi_DanMu_Crawling/py;
+      uv sync --frozen --no-cache;
+      uv run main.py -c /app/config
+      "
+    restart: unless-stopped
