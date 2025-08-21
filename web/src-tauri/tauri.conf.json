@@ -1,0 +1,30 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "BiLiBiLi_DanMu_Crawling",
+  "version": "0.1.0",
+  "identifier": "bili.dan.crawling",
+  "build": {
+    "frontendDist": "../out",
+    "devUrl": "http://localhost:3000",
+    "beforeDevCommand": "pnpm dev --turbo",
+    "beforeBuildCommand": "pnpm build --turbo"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "BiliBili历史全弹幕获取",
+        "resizable": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/icon.png"
+    ]
+  }
+}
