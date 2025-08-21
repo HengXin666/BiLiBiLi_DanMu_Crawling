@@ -520,7 +520,7 @@ export function TaskListPanel({ refreshKey }: { refreshKey: number }) {
         </div>
       ) : (
         <Button
-          className="fixed bottom-20 right-8 z-50 shadow-xl rounded-full px-6 py-4 text-base"
+          className="fixed bottom-20 right-8 shadow-xl rounded-full px-6 py-4 text-base"
           color="secondary"
           size="sm"
           startContent={<Hammer size={20} />}

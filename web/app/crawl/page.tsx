@@ -102,6 +102,7 @@ import {
   ModalBody,
   ModalContent,
   ModalHeader,
+  Spacer,
 } from "@heroui/react";
 import { Plus } from "lucide-react";
 
@@ -120,14 +121,16 @@ export default function TaskManagerPage() {
   };
 
   return (
-    <div className="w-full flex flex-col flex-grow px-6 pt-8 relative">
-      <h1 className={title()}>弹幕爬虫 | 任务管理</h1>
+    <div className="w-full flex flex-col flex-grow relative">
+      <h1 className={title()}>任务管理</h1>
+
+      <Spacer y={4} />
 
       <TaskListPanel refreshKey={refreshKey} />
 
       {/* 右下角悬浮按钮 */}
       <Button
-        className="fixed bottom-8 right-8 z-50 shadow-xl rounded-full px-6 py-4 text-base"
+        className="fixed bottom-8 right-8 shadow-xl rounded-full px-6 py-4 text-base"
         color="primary"
         isIconOnly={false}
         startContent={<Plus size={20} />}

@@ -7,6 +7,9 @@ import {
   Button,
   ScrollShadow,
   Image,
+  Code,
+  User,
+  Link,
 } from "@heroui/react";
 
 import { GithubIcon } from "@/components/icons";
@@ -15,7 +18,7 @@ import pkg from "@/package.json";
 
 export default function AboutPage() {
   return (
-    <div className="max-w-3xl mx-auto p-8 space-y-8">
+    <div className="max-w-3xl mx-auto space-y-8">
       <h1 className="text-4xl font-bold tracking-tight">关于本项目</h1>
 
       <ScrollShadow className="h-auto space-y-6">
@@ -46,13 +49,34 @@ export default function AboutPage() {
           <CardBody>
             <ul className="text-base text-muted-foreground space-y-2">
               <li>
-                版本: <span className="font-medium">v{pkg.version}</span>
+                版本:{" "}
+                <span className="font-medium">
+                  <Code>v{pkg.version}</Code>
+                </span>
               </li>
               <li>
-                许可证: <span className="font-medium">MIT</span>
+                许可证:{" "}
+                <span className="font-medium">
+                  <Code>MIT</Code>
+                </span>
               </li>
               <li>
-                作者: <a href="https://github.com/HengXin666">Heng_Xin</a>
+                作者:{" "}
+                <User
+                  avatarProps={{
+                    src: "https://avatars.githubusercontent.com/u/103022267?v=4",
+                  }}
+                  description={
+                    <Link
+                      isExternal
+                      href="https://github.com/HengXin666"
+                      size="sm"
+                    >
+                      @HengXin666
+                    </Link>
+                  }
+                  name="Heng_Xin"
+                />
               </li>
             </ul>
           </CardBody>
