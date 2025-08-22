@@ -234,7 +234,10 @@ export default function DmHandlePage() {
     setFileExt(ext);
 
     if (FSAWarningClose) fileSaver(dm, ext);
-    else FSAWarning.onOpen();
+    else {
+      setLoading(false);
+      FSAWarning.onOpen();
+    }
   };
 
   // useEffect(() => {}, []);
