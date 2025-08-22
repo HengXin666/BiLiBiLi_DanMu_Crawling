@@ -14,7 +14,7 @@ export default function Ping({ renderUI = false }: { renderUI?: boolean }) {
 
   const isLoading = backendUrlOk === 3;
 
-  const ping = () => {
+  const ping = (url?: string) => {
     if (isLoading) return;
     setBackendUrlOk(3);
 
@@ -23,7 +23,7 @@ export default function Ping({ renderUI = false }: { renderUI?: boolean }) {
       setBackendUrlOk(1);
     };
 
-    fetch(`${backendUrl}/base/ping`)
+    fetch(`${url ?? backendUrl}/base/ping`)
       .then((res) => res.json())
       .then(async (data) => {
         if (data?.data === "pong") {
@@ -39,7 +39,13 @@ export default function Ping({ renderUI = false }: { renderUI?: boolean }) {
   };
 
   useEffect(() => {
-    if (backendUrlOk === 2) ping();
+    // useAtomWithStorage的谜之bug，只能手动补一下了
+    let localStoragePatch = localStorage.getItem("BACKEND_URL");
+
+    if (localStoragePatch) {
+      localStoragePatch = JSON.stringify(localStoragePatch);
+    }
+    if (backendUrlOk === 2) ping(localStoragePatch ?? undefined);
   }, []);
 
   if (renderUI)
