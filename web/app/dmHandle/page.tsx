@@ -17,7 +17,7 @@ import {
   useDisclosure,
 } from "@heroui/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { startTransition, useMemo, useState, useTransition } from "react";
 import { DM_format, UniPool } from "@dan-uni/dan-any";
 import {
   fileOpen,
@@ -32,6 +32,7 @@ import { title, subtitle } from "@/components/primitives";
 import ImportInfo from "./importInfo";
 import LibInfo from "./libInfo";
 import Analytics from "./analytics";
+import sync2async from "./sync2async";
 
 const sanitizePath = (input: string): boolean =>
   /[ \/\\\*\?\<\>\|":]/.test(input);
@@ -50,6 +51,10 @@ export default function DmHandlePage() {
   const [FSA, setFSA] = useState<FileSystemFileHandle>();
   const FSAWarning = useDisclosure();
   const [FSAWarningClose, setFSAWarningCLose] = useState<boolean>(FSAsupported);
+  const [isPending, startTransition] = useTransition();
+  const [isLoading2, setLoading] = useState(false);
+
+  const isLoading = isPending || isLoading2;
 
   const fnValid = useMemo(() => {
     if (fileName === "") return false;
@@ -58,16 +63,24 @@ export default function DmHandlePage() {
   }, [fileName]);
 
   const importDm = async () => {
-    const fail = (description?: string) =>
+    const fail = (description?: string) => {
       toast.error("弹幕导入失败", description);
-    const success = () => toast.success("弹幕导入成功");
+      setFileType(undefined);
+      setLoading(false);
+    };
+    const success = () => {
+      toast.success("弹幕导入成功");
+      setLoading(false);
+    };
+
+    setLoading(true);
 
     if (url)
       await fetch(url)
         .then((res) => res.text())
-        .then((dmFile) => {
+        .then(async (dmFile) => {
           setFileType("bili.xml");
-          setDmPool(UniPool.fromBiliXML(dmFile));
+          setDmPool(await sync2async(() => UniPool.fromBiliXML(dmFile)));
           success();
         })
         .catch(() => {
@@ -75,37 +88,38 @@ export default function DmHandlePage() {
           router.push("/dmHandle");
         });
     else {
-      const file = FSA
-        ? ((await FSA.getFile()) as FileWithHandle)
-        : await fileOpen([
-            {
-              description: "bili xml 弹幕",
-              mimeTypes: ["application/xml"],
-              extensions: [".xml"],
-            },
-            {
-              description: "ProtoBuf 弹幕",
-              mimeTypes: ["application/octet-stream"],
-              extensions: [".bin", ".so"],
-            },
-            {
-              description: "JSON 弹幕",
-              mimeTypes: ["application/json"],
-              extensions: [".json"],
-            },
-            {
-              description: "ASS 弹幕",
-              mimeTypes: ["text/x-ssa"],
-              extensions: [".ass"],
-            },
-          ]).catch((e) => {
-            const err = String(e);
+      const file =
+        FSA && !dmPool.info.fromConverted
+          ? ((await FSA.getFile()) as FileWithHandle)
+          : await fileOpen([
+              {
+                description: "bili xml 弹幕",
+                mimeTypes: ["application/xml"],
+                extensions: [".xml"],
+              },
+              {
+                description: "ProtoBuf 弹幕",
+                mimeTypes: ["application/octet-stream"],
+                extensions: [".bin", ".so"],
+              },
+              {
+                description: "JSON 弹幕",
+                mimeTypes: ["application/json"],
+                extensions: [".json"],
+              },
+              {
+                description: "ASS 弹幕",
+                mimeTypes: ["text/x-ssa"],
+                extensions: [".ass"],
+              },
+            ]).catch((e) => {
+              const err = String(e);
 
-            toast.error(
-              "弹幕导入失败",
-              err.includes("aborted") ? "用户手动取消文件选择" : err,
-            );
-          });
+              toast.error(
+                "弹幕导入失败",
+                err.includes("aborted") ? "用户手动取消文件选择" : err,
+              );
+            });
 
       if (!file) {
         // 这里就不该报错
@@ -119,7 +133,8 @@ export default function DmHandlePage() {
         return parts.length > 1 ? parts.pop() : "";
       };
 
-      if (!FSA && file.handle) setFSA(file.handle);
+      if (!(FSA && !dmPool.info.fromConverted) && file.handle)
+        setFSA(file.handle);
 
       const fn = file.name;
       let ext = getFileExtension(fn),
@@ -136,14 +151,19 @@ export default function DmHandlePage() {
       if (ext === "xml") {
         try {
           setFileType("bili.xml");
-          setDmPool(UniPool.fromBiliXML(await file.text()));
+          setDmPool(
+            await sync2async(async () =>
+              UniPool.fromBiliXML(await file.text()),
+            ),
+          );
         } catch (e) {
-          setFileType(undefined);
           fail(`解析XML失败，该XML不是bili格式[${e}]]`);
         }
       } else if (ext === "ass") {
         try {
-          const pool = UniPool.fromASS(await file.text());
+          const pool = await sync2async(async () =>
+            UniPool.fromASS(await file.text()),
+          );
 
           if (pool.dans.length === 0) throw new Error("该ASS不含恢复信息");
           else {
@@ -151,27 +171,28 @@ export default function DmHandlePage() {
             setDmPool(pool);
           }
         } catch (e) {
-          setFileType(undefined);
           fail(`解析ASS失败[${e}]`);
         }
       } else if (ext === "json") {
         try {
-          const imp = UniPool.import(await file.text());
+          const imp = await sync2async(async () =>
+            UniPool.import(await file.text()),
+          );
 
           setFileType(imp.fmt);
           setDmPool(imp.pool);
         } catch (e) {
-          setFileType(undefined);
           fail(`解析JSON失败[${e}]`);
         }
       } else {
         try {
-          const imp = UniPool.import(await file.arrayBuffer());
+          const imp = await sync2async(async () =>
+            UniPool.import(await file.arrayBuffer()),
+          );
 
           setFileType(imp.fmt);
           setDmPool(imp.pool);
         } catch (e) {
-          setFileType(undefined);
           fail(`解析二进制文件失败[${e}]`);
         }
       }
@@ -179,9 +200,12 @@ export default function DmHandlePage() {
       success();
     }
   };
-  const fileSaver = (dm: string | Uint8Array, ext: string) => {
+  const fileSaver = async (
+    dm: string | Uint8Array | Promise<string | Uint8Array>,
+    ext: string,
+  ) => {
     fileSave(
-      new Blob([dm as string | ArrayBuffer]),
+      new Blob([(await dm) as string | ArrayBuffer]),
       {
         fileName: fileName + "." + ext,
         extensions: ["." + ext],
@@ -198,7 +222,10 @@ export default function DmHandlePage() {
     });
     toast.success("弹幕已导出");
   };
-  const startDownload = (dm: string | Uint8Array, ext: string) => {
+  const startDownload = async (
+    dm: string | Uint8Array | Promise<string | Uint8Array>,
+    ext: string,
+  ) => {
     setFileExt(ext);
 
     if (FSAWarningClose) fileSaver(dm, ext);
@@ -216,7 +243,7 @@ export default function DmHandlePage() {
       <Divider />
       {(dmPool.dans.length > 0 && !dmPool.info.fromConverted) || (
         <>
-          <Button color="primary" onPress={importDm}>
+          <Button color="primary" isLoading={isLoading} onPress={importDm}>
             读取弹幕
           </Button>
           <div className="text-sm text-gray-400">
@@ -247,7 +274,11 @@ export default function DmHandlePage() {
                 <h2 className={subtitle()}>处理选项</h2>
                 <div className="flex flex-wrap gap-4 items-center">
                   <div>
-                    <Button color="danger" onPress={importDm}>
+                    <Button
+                      color="danger"
+                      isLoading={isLoading}
+                      onPress={importDm}
+                    >
                       还原全部处理
                     </Button>
                   </div>
@@ -269,9 +300,16 @@ export default function DmHandlePage() {
                     />
                     <Button
                       color="primary"
+                      isLoading={isLoading}
                       onPress={() => {
-                        setDmPool(dmPool.merge(mergeLifetime));
-                        toast.success("去重成功");
+                        startTransition(() =>
+                          sync2async(() => {
+                            startTransition(() =>
+                              setDmPool(dmPool.merge(mergeLifetime)),
+                            );
+                            toast.success("去重成功");
+                          }),
+                        );
                       }}
                     >
                       去重(基础)
@@ -307,14 +345,19 @@ export default function DmHandlePage() {
                   <div className="flex flex-col gap-2 lg:flex-row">
                     <Button
                       color="primary"
+                      isLoading={isLoading}
                       onPress={() => {
-                        startDownload(dmPool.toBiliXML(), "xml");
+                        startDownload(
+                          sync2async(() => dmPool.toBiliXML()),
+                          "xml",
+                        );
                       }}
                     >
                       Bili(XML)
                     </Button>
                     <Button
                       color="primary"
+                      isLoading={isLoading}
                       onPress={() => {
                         const canvas = document.createElement("canvas");
 
@@ -323,25 +366,30 @@ export default function DmHandlePage() {
                         const ctx = canvas.getContext("2d");
 
                         startDownload(
-                          dmPool.toASS(ctx, {
-                            filename: `${fileName}.xml`,
-                            title: fileName,
-                            raw: {
-                              compressType: "gzip",
-                              baseType: "base18384",
-                            },
-                          }),
+                          sync2async(() =>
+                            dmPool.toASS(ctx, {
+                              filename: `${fileName}.xml`,
+                              title: fileName,
+                              raw: {
+                                compressType: "gzip",
+                                baseType: "base18384",
+                              },
+                            }),
+                          ),
                           "ass",
                         );
                       }}
                     >
                       ASS
                     </Button>
-                    <ButtonGroup>
+                    <ButtonGroup isDisabled={isLoading}>
                       <Button
                         color="primary"
                         onPress={() => {
-                          startDownload(JSON.stringify(dmPool.dans), "json");
+                          startDownload(
+                            sync2async(() => JSON.stringify(dmPool.dans)),
+                            "json",
+                          );
                         }}
                       >
                         DanUni(JSON)
@@ -349,18 +397,23 @@ export default function DmHandlePage() {
                       <Button
                         color="secondary"
                         onPress={() => {
-                          startDownload(dmPool.toPb(), "pb.bin");
+                          startDownload(
+                            sync2async(() => dmPool.toPb()),
+                            "pb.bin",
+                          );
                         }}
                       >
                         DanUni(ProtoBuf)
                       </Button>
                     </ButtonGroup>
-                    <ButtonGroup>
+                    <ButtonGroup isDisabled={isLoading}>
                       <Button
                         color="primary"
                         onPress={() => {
                           startDownload(
-                            JSON.stringify(dmPool.toDplayer()),
+                            sync2async(() =>
+                              JSON.stringify(dmPool.toDplayer()),
+                            ),
                             "json",
                           );
                         }}
@@ -371,7 +424,9 @@ export default function DmHandlePage() {
                         color="secondary"
                         onPress={() => {
                           startDownload(
-                            JSON.stringify(dmPool.toArtplayer()),
+                            sync2async(() =>
+                              JSON.stringify(dmPool.toArtplayer()),
+                            ),
                             "json",
                           );
                         }}
@@ -382,7 +437,7 @@ export default function DmHandlePage() {
                         color="default"
                         onPress={() => {
                           startDownload(
-                            JSON.stringify(dmPool.toDDplay()),
+                            sync2async(() => JSON.stringify(dmPool.toDDplay())),
                             "json",
                           );
                         }}
@@ -435,6 +490,7 @@ export default function DmHandlePage() {
 
               <Button
                 color="danger"
+                isLoading={isLoading}
                 onPress={() => {
                   const success = () =>
                     toast.success("导出弹幕完成", "已释放缓存");

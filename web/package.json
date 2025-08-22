@@ -12,7 +12,7 @@
     "tauri:build": "cross-env NO_STRIP=true tauri build"
   },
   "dependencies": {
-    "@dan-uni/dan-any": "^0.9.2",
+    "@dan-uni/dan-any": "^0.9.3",
     "@heroui/button": "^2.2.24",
     "@heroui/link": "^2.2.21",
     "@heroui/navbar": "^2.2.22",

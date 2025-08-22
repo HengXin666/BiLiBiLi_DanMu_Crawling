@@ -7,7 +7,10 @@ import { subtitle } from "@/components/primitives";
 
 export default function LibInfo({ dmPool }: { dmPool: UniPool }) {
   const shared = useMemo(() => {
-    return dmPool.shared;
+    return {
+      SOID: dmPool.getShared("SOID") as string,
+      platform: dmPool.getShared("platform") as string,
+    };
   }, [dmPool]);
 
   return (
