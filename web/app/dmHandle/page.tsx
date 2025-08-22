@@ -205,14 +205,18 @@ export default function DmHandlePage() {
     ext: string,
   ) => {
     fileSave(
-      new Blob([(await dm) as string | ArrayBuffer]),
+      ext === "pb.bin" && FSAsupported
+        ? (dm as unknown as Promise<Blob>)
+        : new Blob([(await dm) as string]),
       {
         fileName: fileName + "." + ext,
         extensions: ["." + ext],
         startIn: "downloads",
       },
-      null,
     )
+      .then(() => {
+        toast.success("弹幕已导出");
+      })
       .catch((e) => {
         const err = String(e);
 
@@ -221,10 +225,7 @@ export default function DmHandlePage() {
           err.includes("aborted") ? "用户手动取消导出" : err,
         );
       })
-      .finally(() => {
-        toast.success("弹幕已导出");
-        setLoading(false);
-      });
+      .finally(() => setLoading(false));
   };
   const startDownload = async (
     dm: string | Uint8Array | Promise<string | Uint8Array>,
