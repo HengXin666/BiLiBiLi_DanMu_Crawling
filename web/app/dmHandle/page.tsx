@@ -17,7 +17,7 @@ import {
   useDisclosure,
 } from "@heroui/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { startTransition, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { DM_format, UniPool } from "@dan-uni/dan-any";
 import {
   fileOpen,
@@ -212,20 +212,25 @@ export default function DmHandlePage() {
         startIn: "downloads",
       },
       null,
-    ).catch((e) => {
-      const err = String(e);
+    )
+      .catch((e) => {
+        const err = String(e);
 
-      toast.error(
-        "弹幕导出失败",
-        err.includes("aborted") ? "用户手动取消导出" : err,
-      );
-    });
-    toast.success("弹幕已导出");
+        toast.error(
+          "弹幕导出失败",
+          err.includes("aborted") ? "用户手动取消导出" : err,
+        );
+      })
+      .finally(() => {
+        toast.success("弹幕已导出");
+        setLoading(false);
+      });
   };
   const startDownload = async (
     dm: string | Uint8Array | Promise<string | Uint8Array>,
     ext: string,
   ) => {
+    setLoading(true);
     setFileExt(ext);
 
     if (FSAWarningClose) fileSaver(dm, ext);
