@@ -119,6 +119,8 @@ export default function DmHandlePage() {
                 "弹幕导入失败",
                 err.includes("aborted") ? "用户手动取消文件选择" : err,
               );
+
+              setLoading(false);
             });
 
       if (!file) {
