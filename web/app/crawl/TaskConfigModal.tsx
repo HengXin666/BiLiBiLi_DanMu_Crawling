@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Modal,
   ModalContent,
@@ -75,25 +75,45 @@ export const TaskConfigModal: React.FC<TaskConfigModalProps> = ({
   onClose,
   onSave,
 }) => {
-  const [title, setTitle] = useState("");
-  const [useDefaultRange, setUseDefaultRange] = useState(true);
-  const [startTime, setStartTime] = useState<DateValue>(
-    today(getLocalTimeZone()),
-  );
-  const [endTime, setEndTime] = useState<DateValue>(today(getLocalTimeZone()));
+  // 使用 configData.configId 作为 key 的依据,当 configData 变化时重置状态
+  const configId = configData?.configId ?? "";
 
-  useEffect(() => {
-    if (!configData) return;
+  // 计算初始值
+  const getInitialValues = () => {
+    if (!configData) {
+      return {
+        title: "",
+        useDefaultRange: true,
+        startTime: today(getLocalTimeZone()),
+        endTime: today(getLocalTimeZone()),
+      };
+    }
+
     const [startTs, endTs] = configData.range;
+    const useDefaultRange = startTs === 0 && endTs === 0;
 
-    setTitle(configData.title);
-    setUseDefaultRange(startTs === 0 && endTs === 0);
-    setStartTime(toDateValue(startTs) ?? today(getLocalTimeZone()));
-    setEndTime(toDateValue(endTs) ?? today(getLocalTimeZone()));
-  }, [configData]);
+    return {
+      title: configData.title,
+      useDefaultRange,
+      startTime: toDateValue(startTs) ?? today(getLocalTimeZone()),
+      endTime: toDateValue(endTs) ?? today(getLocalTimeZone()),
+    };
+  };
+
+  const [title, setTitle] = useState(() => getInitialValues().title);
+  const [useDefaultRange, setUseDefaultRange] = useState(
+    () => getInitialValues().useDefaultRange,
+  );
+  const [startTime, setStartTime] = useState<DateValue>(
+    () => getInitialValues().startTime,
+  );
+  const [endTime, setEndTime] = useState<DateValue>(
+    () => getInitialValues().endTime,
+  );
 
   const handleSaveClick = async () => {
     if (!configData) return;
+
     const newRange: [number, number] = useDefaultRange
       ? [0, 0]
       : [toTimestamp(startTime, false), toTimestamp(endTime, true)];
@@ -102,7 +122,13 @@ export const TaskConfigModal: React.FC<TaskConfigModalProps> = ({
   };
 
   return (
-    <Modal isDismissable={false} isOpen={isOpen} size="md" onClose={onClose}>
+    <Modal
+      key={configId}
+      isDismissable={false}
+      isOpen={isOpen}
+      size="md"
+      onClose={onClose}
+    >
       <ModalContent>
         <ModalHeader>任务配置管理</ModalHeader>
         <ModalBody>
@@ -146,7 +172,7 @@ export const TaskConfigModal: React.FC<TaskConfigModalProps> = ({
                       label="结束时间"
                       value={endTime}
                       onChange={(e) =>
-                        setStartTime(e || today(getLocalTimeZone()))
+                        setEndTime(e || today(getLocalTimeZone()))
                       }
                     />
                   </div>

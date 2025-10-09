@@ -3,7 +3,7 @@
 import type { UniPool } from "@dan-uni/dan-any";
 
 import { Button, Input, Spinner } from "@heroui/react";
-import { memo, Suspense, use, useMemo, useState } from "react";
+import { memo, Suspense, use, useEffect, useMemo, useState } from "react";
 
 import { subtitle } from "@/components/primitives";
 
@@ -48,9 +48,12 @@ export default memo(function Analytics({
   limit?: number;
 }) {
   const [show, setShow] = useState(dmPool.dans.length <= limit);
-  const dmp = useMemo(() => {
-    setShow(dmPool.dans.length <= limit);
 
+  useEffect(() => {
+    setShow(dmPool.dans.length <= limit);
+  }, [dmPool, limit]);
+
+  const dmp = useMemo(() => {
     return dmPool;
   }, [dmPool]);
 

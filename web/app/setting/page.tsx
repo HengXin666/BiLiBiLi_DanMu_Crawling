@@ -122,7 +122,11 @@ export default function SettingPage() {
   };
 
   useEffect(() => {
-    fetchConfig();
+    const loadConfig = async () => {
+      await fetchConfig();
+    };
+
+    loadConfig();
   }, []);
 
   const handleReRead = async () => {
